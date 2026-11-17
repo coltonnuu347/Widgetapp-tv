@@ -41,6 +41,7 @@
     if (sec < lastSec) { wrap.classList.add('sec-jump'); setTimeout(function () { wrap.classList.remove('sec-jump'); }, 60); }
     wrap.style.setProperty('--sec', (sec / 59).toFixed(3));
     lastSec = sec;
+    if (TV.ambient && TV.ambient.active()) TV.ambient.update(now);
   }
 
   TV.tickClock = tickClock;

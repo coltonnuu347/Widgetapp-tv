@@ -33,8 +33,11 @@
     { title: 'Smart & Motion', rows: [
       { key: 'anim', label: 'Animations', options: [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']] },
       { key: 'greeting', label: 'Greeting', toggle: true },
-      { key: 'nightDim', label: 'Dim After Sunset', toggle: true }
-    ], hint: 'Reduced keeps simple fades only. If anything looks choppy on your TV, set Animations to Reduced or Off.' }
+      { key: 'nightDim', label: 'Dim After Sunset', toggle: true },
+      { key: 'albumBg', label: 'Album Art Background', toggle: true },
+      { key: 'wxfx', label: 'Weather Effects', toggle: true },
+      { key: 'ambient', label: 'Ambient Mode', options: [[10, 'After 10 Min'], [5, 'After 5 Min'], [30, 'After 30 Min'], [60, 'After 1 Hour'], [0, 'Off']] }
+    ], hint: 'Ambient Mode fades the panels out and leaves a calm clock (and your photos) when nobody is using the remote. Any button brings everything back. Reduced keeps simple fades only. If anything looks choppy on your TV, set Animations to Reduced or Off.' }
   ];
 
   // Puts the saved choices onto <body>, where the stylesheet picks them up.

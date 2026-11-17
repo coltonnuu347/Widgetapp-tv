@@ -56,7 +56,9 @@
     clearTimeout(pollTimer);
     api('GET', '/me/player?additional_types=episode').then(function (j) {
       state = (j && j.item) ? j : null;
+      if (state && !state.is_playing) { if (!pausedSince) pausedSince = Date.now(); } else pausedSince = 0;
       colorize();
+      syncAlbum();
       stateAt = Date.now();
       TV.widgets.update('spotify');
     }).catch(function (e) {
@@ -76,6 +78,7 @@
     if (action === 'toggle') { // update the button right away
       if (state.is_playing) state.progress_ms = progressNow();
       state.is_playing = !state.is_playing;
+      pausedSince = state.is_playing ? 0 : Date.now();
       stateAt = Date.now();
       TV.widgets.update('spotify');
     }
@@ -92,13 +95,29 @@
   // The album's main color, for a soft glow behind the art, the progress line and the equalizer bars.
   // Cover art comes from Spotify's CDN, which allows reading its pixels; if it ever refuses, we simply
   // keep the theme's own accent.
-  var artUrl = '';
+  var artUrl = '', palette = null, pausedSince = 0;
+
+  // The whole screen takes the album's colors while a song plays (or for 3 minutes after you pause it).
+  function syncAlbum() {
+    var want = TV.settings.prefs.albumBg && state && palette && (state.is_playing || (pausedSince && Date.now() - pausedSince < 3 * 60000));
+    TV.setAlbumBackground(want ? palette : null);
+  }
+  TV.on('prefs', syncAlbum);
+  setInterval(syncAlbum, 30 * 1000);
+
+  // What Ambient Mode shows under its clock
+  TV.nowPlaying = function () {
+    if (!state || !state.is_playing) return null;
+    var info = trackInfo(state.item);
+    return { title: info.title, artist: info.artist };
+  };
+
   function colorize() {
     var url = state ? trackInfo(state.item).art : '';
     if (url === artUrl) return;
     artUrl = url;
     var st = document.body.style;
-    function clear() { st.removeProperty('--sp-c-dark'); st.removeProperty('--sp-c-light'); st.removeProperty('--sp-glow'); }
+    function clear() { st.removeProperty('--sp-c-dark'); st.removeProperty('--sp-c-light'); st.removeProperty('--sp-glow'); palette = null; syncAlbum(); }
     if (!url) { clear(); return; }
     var img = new Image();
     img.crossOrigin = 'anonymous';
@@ -125,6 +144,8 @@
         st.setProperty('--sp-c-dark', TV.ensureContrast(TV.hslToHex(H, 0.7, 0.66), '#5c5636', 3.2, true));
         st.setProperty('--sp-c-light', TV.ensureContrast(TV.hslToHex(H, 0.65, 0.42), '#d7bff2', 3.2, false));
         st.setProperty('--sp-glow', 'hsla(' + Math.round(H) + ', 80%, 55%, 0.55)');
+        palette = TV.palette.albumPalette(d, N, TV.maxBlobLum);   // four corner colors for the background
+        syncAlbum();
       } catch (e) { clear(); }
     };
     img.src = url;

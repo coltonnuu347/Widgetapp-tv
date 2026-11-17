@@ -81,8 +81,10 @@
       var pl = plan(), pages = pl.pages.length;
       if (page >= pages) page = 0;
       var rows = pl.pages[page];
+      // A page with only one row (the last page of a long list) uses the large tile layout, so tiles never look empty
+      var denseHere = pl.dense && rows.length > 1;
       var onPage = [].concat.apply([], rows).map(function (c) { return c.w; });
-      var sig = (pl.dense ? 'd|' : 'l|') + rows.map(function (r) { return r.map(function (c) { return c.w.id + (c.span > 1 ? ':' + c.span : ''); }).join(','); }).join('/');
+      var sig = (denseHere ? 'd|' : 'l|') + (pl.dense ? 'D|' : 'S|') + rows.map(function (r) { return r.map(function (c) { return c.w.id + (c.span > 1 ? ':' + c.span : ''); }).join(','); }).join('/');
 
       // Page dots first: they take up room, and the tiles are sized to what is left.
       var dots = TV.$('#widget-dots');
@@ -97,7 +99,7 @@
         var focused = slots.contains(document.activeElement) ? document.activeElement.getAttribute('data-widget') : null;
         document.body.classList.toggle('dense', pl.dense);
         slots.innerHTML = '';
-        slots.className = pl.dense ? 'rows-2' : 'rows-1';
+        slots.className = denseHere ? 'rows-2' : 'rows-1';
         rows.forEach(function (row) {
           var rowEl = document.createElement('div');
           rowEl.className = 'wrow';
@@ -106,7 +108,7 @@
             var w = c.w, share = c.span / total;
             var el = document.createElement('section');
             // w-wide / w-narrow (large tiles) and d-wide (compact grid) let a tile change its layout with its width
-            el.className = 'card widget widget-' + w.id + (pl.dense ? (c.span > 1 ? ' d-wide' : '') : (share >= 0.5 ? ' w-wide' : ' w-narrow'));
+            el.className = 'card widget widget-' + w.id + (denseHere ? (c.span > 1 ? ' d-wide' : '') : (share >= 0.5 ? ' w-wide' : ' w-narrow'));
             el.setAttribute('data-widget', w.id);
             // Each tile takes its share of the row (a 2-column tile is exactly two tiles plus the gap between them)
             el.style.flex = '0 0 calc(' + (share * 100).toFixed(3) + '% - var(--gap))';
@@ -132,7 +134,7 @@
       } else {
         TV.widgets.refreshAll();
       }
-
+      if (TV.focusGlow) TV.focusGlow.sync();
     },
 
     // Show the next/previous page of widgets. Returns false when there is only one page.

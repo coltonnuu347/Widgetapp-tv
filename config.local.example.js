@@ -23,9 +23,13 @@
   // NASA Picture of the Day (free key: https://api.nasa.gov).
   // c.nasaApiKey = 'YOUR_NASA_KEY';
 
-  // Your own wallpaper photos (put the files in images/wallpapers/).
+  // Countdowns (or make a calendar event titled "Countdown: Beach trip" from your phone).
+  // c.countdowns = [{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }];
+
+  // Your own wallpaper photos (put the files in images/wallpapers/). With two or more you get a Slideshow
+  // on the theme screen, and Ambient Mode shows them as a photo frame.
   // c.wallpapers = ['beach.jpg', 'mountains.jpg'];
 
-  // Widgets that start turned off: 'sunmoon', 'wifi', 'dates', 'commute', 'nasa', 'spotify'
+  // Widgets that start turned off: 'sunmoon', 'wifi', 'dates', 'commute', 'nasa', 'air', 'countdown', 'spotify'
   // c.widgetsOff = ['dates', 'nasa'];
 })(window.TV_CONFIG);

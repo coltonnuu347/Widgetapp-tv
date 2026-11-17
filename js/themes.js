@@ -36,6 +36,9 @@
 
   TV.nasaPhoto = null; // set by the NASA widget: { url, title }
 
+  // Where a wallpaper file lives (the single-file preview supplies TV.wallData instead of real files)
+  TV.wallUrl = function (f) { return (TV.wallData && TV.wallData[f]) || 'images/wallpapers/' + encodeURIComponent(f); };
+
   function gradientById(id) {
     for (var i = 0; i < TV.GRADIENTS.length; i++) if (TV.GRADIENTS[i].id === id) return TV.GRADIENTS[i];
     return TV.GRADIENTS[0];
@@ -146,17 +149,20 @@
     st.setProperty('--ol-theme', dark ? rgba(theme.glow, 0.60) : rgba(theme.accent, 0.66)); // outline color
     st.setProperty('--ol-top', dark ? rgba(theme.glow, 0.95) : rgba(theme.accent, 0.95)); // brighter top edge
 
-    var gradEl = TV.$('#bg-gradient'), photoEl = TV.$('#bg-photo');
-    var photoUrl = '';
-    if (t.style === 'photo' && t.photo && (TV_CONFIG.wallpapers || []).indexOf(t.photo) >= 0) {
-      photoUrl = 'images/wallpapers/' + encodeURIComponent(t.photo);
+    var gradEl = TV.$('#bg-gradient');
+    var photoUrl = '', walls = TV_CONFIG.wallpapers || [], moving = false;
+    if (t.style === 'photo' && t.photo && walls.indexOf(t.photo) >= 0) {
+      photoUrl = TV.wallUrl(t.photo);
     } else if (t.style === 'nasa' && TV.nasaPhoto) {
       photoUrl = TV.nasaPhoto.url;
+    } else if (walls.length && (t.style === 'slideshow' || ambientSlides)) {
+      // Slideshow (and the ambient "photo frame"): one photo after another, each with a slow pan
+      photoUrl = TV.wallUrl(walls[slideIndex % walls.length]);
+      moving = true;
     }
 
     if (photoUrl) {
-      photoEl.style.backgroundImage = 'url("' + photoUrl.replace(/"/g, '%22') + '")';
-      photoEl.style.opacity = '1';
+      showPhoto(photoUrl, moving);
       gradEl.style.opacity = '0';
     } else {
       var g = theme;
@@ -165,8 +171,66 @@
         b.style.background = 'radial-gradient(circle, ' + g.blobs[i] + ' 0%, ' + g.blobs[i] + ' 22%, transparent 68%)';
       });
       gradEl.style.opacity = '1';
-      photoEl.style.opacity = '0';
+      showPhoto('', false);
     }
+  };
+
+  // ---------- Photos: two layers, so one photo fades into the next ----------
+  var photoFront = 0, shownUrl = '', slideIndex = 0, ambientSlides = false, SLIDE_MS = 120 * 1000;
+  function showPhoto(url, moving) {
+    var layers = [TV.$('#bg-photo'), TV.$('#bg-photo2')], cur = layers[photoFront], next = layers[1 - photoFront];
+    if (!url) { layers[0].style.opacity = '0'; layers[1].style.opacity = '0'; shownUrl = ''; return; }
+    if (url === shownUrl) { cur.classList.toggle('kb', !!moving); return; }
+    next.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+    // Each photo drifts toward a different corner
+    next.style.transformOrigin = ['20% 30%', '80% 30%', '25% 75%', '75% 70%'][slideIndex % 4];
+    next.classList.toggle('kb', false); void next.offsetWidth;
+    if (moving) next.classList.add('kb');
+    next.style.opacity = '1';
+    if (shownUrl) cur.style.opacity = '0';
+    photoFront = 1 - photoFront;
+    shownUrl = url;
+  }
+  setInterval(function () {
+    var walls = TV_CONFIG.wallpapers || [];
+    if (walls.length > 1 && (TV.settings.theme.style === 'slideshow' || ambientSlides)) {
+      slideIndex = (slideIndex + 1) % walls.length;
+      TV.applyTheme();
+    }
+  }, SLIDE_MS);
+  // Used by Ambient Mode: show your photos as a slideshow while the screen is resting.
+  TV.setAmbientSlides = function (on) { ambientSlides = !!on; TV.applyTheme(); };
+  TV.nextSlide = function () {
+    var walls = TV_CONFIG.wallpapers || [];
+    if (walls.length) { slideIndex = (slideIndex + 1) % walls.length; TV.applyTheme(); }
+  };
+
+  // ---------- Album background (Spotify) ----------
+  // Four colors taken from the cover art replace the theme's colored lights. They are kept inside the
+  // brightness range the themes use, so text stays as readable as on any theme.
+  var maxBlobLum = 0;
+  TV.GRADIENTS.forEach(function (g) { g.blobs.concat([g.base]).forEach(function (c) { maxBlobLum = Math.max(maxBlobLum, lum(c)); }); });
+  TV.maxBlobLum = maxBlobLum;
+  var albumKey = '', albumTimer = null;
+  TV.setAlbumBackground = function (pal) {
+    var el = TV.$('#bg-album');
+    if (!el) return;
+    clearTimeout(albumTimer);
+    if (!pal) { el.classList.toggle('on', false); document.body.classList.toggle('album-on', false); albumKey = ''; return; }
+    var key = pal.colors.join(',');
+    if (key === albumKey && el.classList.contains('on')) return;
+    function apply() {
+      el.style.backgroundColor = pal.base;
+      TV.$$('.blob', el).forEach(function (b, i) {
+        b.style.background = 'radial-gradient(circle, ' + pal.colors[i] + ' 0%, ' + pal.colors[i] + ' 22%, transparent 68%)';
+      });
+      el.classList.add('on');
+      document.body.classList.add('album-on');
+    }
+    // A new song: dim the old colors first, then fade the new ones in
+    if (el.classList.contains('on') && albumKey && TV.settings.prefs.anim !== 'off') { el.classList.toggle('on', false); albumTimer = setTimeout(apply, 1300); }
+    else apply();
+    albumKey = key;
   };
 
   // ---------- Theme sheet ----------
@@ -191,9 +255,16 @@
       html += tile({
         action: 'photo', value: f, name: f.replace(/\.[^.]+$/, ''),
         selected: t.style === 'photo' && t.photo === f,
-        style: 'background-image:url(&quot;images/wallpapers/' + TV.esc(encodeURIComponent(f)) + '&quot;)'
+        style: 'background-image:url(&quot;' + TV.esc(TV.wallUrl(f)) + '&quot;)'
       });
     });
+    if ((TV_CONFIG.wallpapers || []).length > 1) {
+      html += tile({
+        action: 'slideshow', value: 'slideshow', name: 'Slideshow',
+        selected: t.style === 'slideshow',
+        style: 'background-image:url(&quot;' + TV.esc(TV.wallUrl(TV_CONFIG.wallpapers[0])) + '&quot;)'
+      });
+    }
     html += tile({
       action: 'nasa', value: 'nasa', name: 'NASA Photo',
       selected: t.style === 'nasa',
@@ -216,6 +287,7 @@
     if (action === 'gradient') { t.style = 'gradient'; t.gradient = value; }
     else if (action === 'photo') { t.style = 'photo'; t.photo = value; }
     else if (action === 'nasa') { t.style = 'nasa'; }
+    else if (action === 'slideshow') { t.style = 'slideshow'; }
     else if (action === 'mode') { t.mode = value; }
     else return false;
     TV.saveSettings();

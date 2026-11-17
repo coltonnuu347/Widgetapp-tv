@@ -39,7 +39,11 @@ window.TV_CONFIG = {
   // Your own wallpaper photos: put the files in images/wallpapers/ and list the file names here.
   wallpapers: [],
 
+  // Countdowns to look forward to: [{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }]
+  // ('MM-DD' repeats every year). You can also make a calendar event titled "Countdown: Beach trip".
+  countdowns: [],
+
   // Widgets that start turned off (you can turn them back on in Settings on the TV).
-  // Names: 'sunmoon', 'wifi', 'dates', 'commute', 'nasa', 'spotify', 'alerts'
+  // Names: 'sunmoon', 'wifi', 'dates', 'commute', 'nasa', 'air', 'countdown', 'spotify', 'alerts'
   widgetsOff: []
 };

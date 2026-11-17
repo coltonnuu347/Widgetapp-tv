@@ -42,6 +42,8 @@
     music: line('<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
     warning: line('<path d="M10.3 4.2 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.5" r=".9" fill="currentColor"/>'),
     check: line('<path d="M5 12.5 10 17.5 19 7"/>'),
+    air: line('<path d="M3 9h10a2.5 2.5 0 1 0-2.5-2.5M3 13h14a2.5 2.5 0 1 1-2.5 2.5M3 17h6"/>'),
+    hourglass: line('<path d="M7 3.5h10M7 20.5h10M8 3.5c0 4.5 3.2 5.2 4 8.5-.8 3.3-4 4-4 8.5M16 3.5c0 4.5-3.2 5.2-4 8.5.8 3.3 4 4 4 8.5"/>'),
     plus: line('<path d="M12 5v14M5 12h14"/>'),
     trash: line('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>'),
     up: line('<path d="M6 14l6-6 6 6"/>'),

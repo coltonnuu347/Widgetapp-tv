@@ -5,11 +5,14 @@ widgets on a themed, glass-style background. It is plain HTML, CSS and JavaScrip
 
 ![Widgetapp TV preview, shown with sample data](docs/preview.png)
 
+![Ambient Mode: a calm clock over a photo slideshow, shown with sample data](docs/ambient.png)
+
 It shows:
 - **Up Next:** your iCloud calendar
 - **Weather:** current conditions and the next 12 hours, in °F with 24-hour times (both can be changed)
-- **Widgets:** Sun & Moon, Guest Wi-Fi QR code, Birthdays & Holidays, Commute, NASA Picture of the Day, Spotify Now Playing (a double-width tile, with album-colored glow and animated bars)
+- **Widgets:** Sun & Moon, Guest Wi-Fi QR code, Birthdays & Holidays, Commute, NASA Picture of the Day, Air & UV, Countdown, Spotify Now Playing (a double-width tile, with album-colored glow and animated bars)
 - **Severe weather alerts:** shown as a banner
+- **Alive background:** the screen takes the colors of the album that is playing, shows rain, snow, clouds or stars to match the weather, and turns into a calm floating clock (with your photos as a slideshow) when nobody is using the remote
 - **Theme button:** 23 themes (13 single-color, 10 colorful; Purple is the default) plus photo backgrounds, and Light/Dark/Auto appearance. The theme colors the background, tints the cards, and colors headings, highlights and buttons.
 
 ## Try it on your Mac first (no setup)
@@ -69,6 +72,9 @@ Everything here is changed with the remote and saved on the TV. **Reset Look to 
 | Smart & Motion | Animations | Full, Reduced (simple fades only), Off |
 | | Greeting | On, Off ("Good evening" before the date) |
 | | Dim After Sunset | On, Off |
+| | Album Art Background | On, Off |
+| | Weather Effects | On, Off |
+| | Ambient Mode | After 10 Min, After 5 Min, After 30 Min, After 1 Hour, Off |
 
 Below those are **Widgets** (turn each on or off, and reorder), **Calendars** and **Location**.
 
@@ -100,6 +106,31 @@ Everything here comes from the calendar and weather the app already loads. Nothi
   and after sunset the screen dims a little (dark mode only, and you can turn it off).
 - **Clock:** the line under the digits is a live seconds line (a bright segment crosses it once a
   minute), the colon breathes, and when a digit changes only that digit slides in.
+- **Album background:** while Spotify plays, four colors from the cover art replace the theme's colored
+  lights (the colors are limited to the same brightness range the themes use, so text stays readable).
+  Paused for more than 3 minutes, or grey/black/white art, and the theme comes back. Turn it off in
+  Settings > Smart & Motion > Album Art Background.
+- **Weather effects:** thin rain streaks (drizzle, rain, thunderstorm), snow, fog, drifting clouds, a few
+  stars on a clear night in Dark mode, or a warm glow on a clear day. They are faint and only use fades and
+  movement. Animations Reduced keeps only the still ones, Animations Off shows none, and Weather Effects
+  can be turned off. Switching off Moving Background also stops the falling ones.
+- **Ambient Mode:** after 10 minutes (you can change it) without a button press the panels fade out and a
+  big thin clock floats on the background with the date and a line (the song playing, or what the line under
+  the clock would say). It drifts to a new spot every 90 seconds. If you added photos, they become a slideshow
+  with a slow pan. The first button press only wakes the screen; play/pause and skip still control Spotify
+  without waking it. It never starts while Settings or a full-screen view is open.
+- **Slideshow:** with two or more photos in `images/wallpapers/`, pick **Slideshow** on the theme screen. Each
+  photo fades into the next every 2 minutes with a slow pan.
+- **Day strip:** a thin time line under Up Next with today's timed events as colored blocks, past ones dimmed,
+  and a marker for now. It starts at 08:00 and ends at 20:00 unless an event falls outside that.
+- **Air & UV widget:** UV index and air quality (US scale) with a gauge for each and the level in words
+  (for example "6 High", "42 Good"). Full screen view adds a tip and the exact scale. If your area has no value
+  for one of them, that row is left out.
+- **Countdown widget:** big day count to the next thing you are looking forward to. Easiest way: make a
+  calendar event titled **Countdown: Beach trip** (or start the title with the hourglass emoji) from your
+  phone, and it appears here, up to a year ahead. You can also list them in `config.local.js` (`c.countdowns`).
+  The widget stays hidden until there is one.
+- **Selection glow:** one soft glow slides from the panel you leave to the panel you select.
 - **Motion:** the screen opens with the panels rising into place, tiles fade in when the widgets
   rotate, and a number that changes (temperature, drive time) brightens for a moment. Everything uses
   only fades and movement, which are the cheapest things a TV browser can draw. If anything looks
@@ -146,7 +177,8 @@ Each setting is optional:
 | `c.birthdays` | Birthdays that aren't in your calendar. Calendar events with "birthday" in the title are found automatically. | — |
 | `c.commute` | Drive time with live traffic. It only shows during `showFrom`–`showUntil` (06:00–10:00 by default). | Free token from https://account.mapbox.com |
 | `c.nasaApiKey` | NASA Picture of the Day. Works without a key, but the shared `DEMO_KEY` has low limits. | Free key from https://api.nasa.gov |
-| `c.wallpapers` | Your own background photos. Put the image files in `images/wallpapers/`, then list their file names. | — |
+| `c.wallpapers` | Your own background photos. Put the image files in `images/wallpapers/`, then list their file names. With two or more, the theme screen offers a **Slideshow**, and Ambient Mode shows them as a photo frame. | — |
+| `c.countdowns` | Days to look forward to: `[{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }]` (`MM-DD` repeats every year). You can also add them from your phone, see Countdown below. | — |
 
 You can also add calendars and change the location on the TV under **Settings**. Typing long links
 with a remote is slow, though, so `config.local.js` is easier.
@@ -230,6 +262,7 @@ the request to iCloud (a "CORS" error). Set up the small free proxy in `proxy/RE
 | Auto location | ipapi.co (backup: GeoJS) | Free, no key |
 | Weather alerts | US National Weather Service (US locations only) | Free, no key |
 | Holidays | Nager.Date | Free, no key |
+| Air quality and UV | Open-Meteo air-quality service | Free, no key |
 | Commute | Mapbox Directions with traffic | Free tier, needs a token |
 | Space photo | NASA APOD | Free, key recommended |
 | Spotify | Spotify Web API | Needs Spotify Premium |
@@ -248,8 +281,8 @@ spotify.local.example.js   the Spotify sign-in tool writes spotify.local.js (git
 config.xml            Samsung/Tizen app manifest
 css/styles.css        the look (Apple-style frosted cards, light/dark)
 fonts/                the Inter typeface and its license
-js/                   app code (ics.js = calendar reader, smart.js = countdowns and rain, widgets/ = each widget)
-images/wallpapers/    put your own background photos here
+js/                   app code (ics.js = calendar reader, smart.js = countdowns, rain, UV and air levels, palette.js = album colors, widgets/ = each widget)
+images/wallpapers/    put your own background photos here (the demo-*.svg files are only used by the preview)
 tools/                Spotify sign-in tool
 proxy/                optional calendar proxy (Cloudflare Worker)
 test/                 automated checks (not needed on the TV)
@@ -290,10 +323,11 @@ test/                 automated checks (not needed on the TV)
 
 ```bash
 TZ=America/Denver node test/ics.test.js      # calendar reader: 25 checks
-node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc: 52 checks
+node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, countdowns, day strip: 95 checks
 node test/pack.test.js                       # tile packing, incl. the double-width Spotify tile: 32 checks
+node test/palette.test.js                    # album-art colors and the brightness cap: 12 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
-node test/ui.test.js                         # screen, remote, options and settings: 50 checks
+node test/ui.test.js                         # screen, remote, options, settings, album background, weather effects, Ambient Mode, slideshow, Air & UV, Countdown, selection glow: 99 checks
 ```
 
 ## Credits and license

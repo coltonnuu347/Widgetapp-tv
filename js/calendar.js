@@ -5,6 +5,7 @@
   var LOOKAHEAD_DAYS = 60; // kept for the Birthdays widget; the list itself shows calendarDays
 
   TV.calendarEvents = []; // occurrences for the next 60 days, shared with widgets
+  TV.farEvents = [];      // "Countdown: ..." events 60 days to a year ahead (for the Countdown widget)
   var errors = [];
 
   function toHttps(url) {
@@ -28,7 +29,10 @@
       var color = cal.color || parsed.color || APPLE_COLORS[index % APPLE_COLORS.length];
       var from = TV.startOfDay(new Date());
       var to = TV.addDays(from, LOOKAHEAD_DAYS);
-      return TV.ics.expand(parsed, from, to).map(function (o) {
+      // Events titled "Countdown: ..." are looked for up to a year ahead, for the Countdown widget
+      var far = TV.ics.expand(parsed, to, TV.addDays(from, 366)).filter(function (o) { return TV.smart.countdownTitle(o.title); });
+      far.forEach(function (o) { o.far = true; });
+      return TV.ics.expand(parsed, from, to).concat(far).map(function (o) {
         o.calendar = name;
         o.color = color;
         return o;
@@ -41,12 +45,12 @@
 
   function saveCache(events) {
     TV.storage.set(CACHE_KEY, events.map(function (o) {
-      return { t: o.title, l: o.location, a: o.allDay, s: o.start.getTime(), e: o.end.getTime(), c: o.calendar, k: o.color };
+      return { t: o.title, l: o.location, a: o.allDay, s: o.start.getTime(), e: o.end.getTime(), c: o.calendar, k: o.color, f: o.far ? 1 : 0 };
     }));
   }
   function loadCache() {
     return (TV.storage.get(CACHE_KEY, []) || []).map(function (o) {
-      return { title: o.t, location: o.l, allDay: o.a, start: new Date(o.s), end: new Date(o.e), calendar: o.c, color: o.k };
+      return { title: o.t, location: o.l, allDay: o.a, start: new Date(o.s), end: new Date(o.e), calendar: o.c, color: o.k, far: !!o.f };
     });
   }
 
@@ -55,6 +59,7 @@
     errors = [];
     if (!cals.length) {
       TV.calendarEvents = [];
+      TV.farEvents = [];
       render();
       TV.emit('calendar', TV.calendarEvents);
       return Promise.resolve();
@@ -69,6 +74,8 @@
       } else if (ok.length === cals.length) {
         saveCache(all);
       }
+      TV.farEvents = all.filter(function (o) { return o.far; });
+      all = all.filter(function (o) { return !o.far; });
       TV.calendarEvents = all;
       render();
       TV.emit('calendar', all);
@@ -91,11 +98,29 @@
     if (!cals.length) {
       TV.$('#cal-sub').textContent = '';
       list.innerHTML = '<div class="empty-note">No calendars yet.<br>Add your iCloud calendar link in Settings or in config.local.js.</div>';
+      renderStrip();
       return;
     }
     list.innerHTML = buildList(Math.max(1, TV.settings.prefs.calDays || 7));
     TV.$('#cal-sub').textContent = TV.smart.todayText(TV.calendarEvents, new Date());
+    renderStrip();   // before trimming: the strip takes its room first, the list fits what is left
     trimToFit(list);
+  }
+
+  // A thin time line of today's events with a marker for "now", under the list.
+  function renderStrip() {
+    var el = TV.$('#day-strip');
+    var s = TV.getCalendars().length ? TV.smart.dayStrip(TV.calendarEvents, new Date()) : null;
+    if (!s) { el.innerHTML = ''; el.className = ''; return; }
+    var last = s.ticks.length - 1;
+    el.className = 'on';
+    el.innerHTML =
+      '<div class="ds-track">' + s.blocks.map(function (b) {
+        return '<span class="ds-ev' + (b.past ? ' past' : '') + '" style="left:' + b.left.toFixed(2) + '%;width:' + b.width.toFixed(2) + '%;background:' + TV.esc(b.color) + '"></span>';
+      }).join('') + (s.nowPct >= 0 ? '<span class="ds-now" style="left:' + s.nowPct.toFixed(2) + '%"></span>' : '') + '</div>' +
+      '<div class="ds-ticks">' + s.ticks.map(function (t, i) {
+        return '<span style="left:' + t.pct.toFixed(2) + '%' + (i === 0 ? '' : i === last ? ';transform:translateX(-100%)' : ';transform:translateX(-50%)') + '">' + TV.fmtHour(new Date(2000, 0, 1, t.hour)) + '</span>';
+      }).join('') + '</div>';
   }
 
   // HTML for the next `days` days of events (used by the card and the full-screen view).

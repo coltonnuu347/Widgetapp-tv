@@ -14,13 +14,17 @@
       <div class="sweep"></div>
     </div>
     <div id="bg-photo"></div>
+    <div id="bg-photo2"></div>
+    <div id="bg-album"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
     <div id="bg-tod"></div>
     <div id="bg-scrim"></div>
+    <div id="bg-wx"></div>
     <div id="bg-dim"></div>
   </div>
 
   <div id="stage">
     <div id="app">
+      <div id="focus-glow"></div>
       <header id="hero">
         <div id="clock-block">
           <div id="date"><span id="greeting"></span><span id="date-text"></span></div>
@@ -45,6 +49,7 @@
         <section class="card" id="card-calendar" data-focus data-detail="calendar" tabindex="0">
           <div class="card-title"><span class="badge"><span class="icon" data-icon="calendar"></span></span><span class="ct-text">Up Next</span><span class="ct-sub" id="cal-sub"></span></div>
           <div id="calendar-list"></div>
+          <div id="day-strip"></div>
         </section>
 
         <div id="right-col">
@@ -59,6 +64,14 @@
           </section>
         </div>
       </main>
+    </div>
+
+    <div id="ambient" aria-hidden="true">
+      <div id="amb-body">
+        <div id="amb-clock"></div>
+        <div id="amb-date"></div>
+        <div id="amb-line"></div>
+      </div>
     </div>
 
     <div id="overlay" class="hidden">
@@ -80,10 +93,14 @@
   <script src="js/location.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/smart.js"></script>
+  <script src="js/palette.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/themes.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/glance.js"></script>
+  <script src="js/weatherfx.js"></script>
+  <script src="js/ambient.js"></script>
+  <script src="js/focusglow.js"></script>
   <script src="js/pack.js"></script>
   <script src="js/widgets/registry.js"></script>
   <script src="js/widgets/sun-moon.js"></script>
@@ -92,6 +109,8 @@
   <script src="js/widgets/dates.js"></script>
   <script src="js/widgets/commute.js"></script>
   <script src="js/widgets/nasa.js"></script>
+  <script src="js/widgets/air.js"></script>
+  <script src="js/widgets/countdown.js"></script>
   <script src="js/widgets/spotify.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/nav.js"></script>

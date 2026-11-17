@@ -120,7 +120,92 @@
     return Math.min(1, Math.max(0, (now - today.sunrise) / (today.sunset - today.sunrise)));
   }
 
-  var api = { todayText: todayText, sunProgress: sunProgress, inText: inText, lengthText: lengthText, progress: progress, isWet: isWet, rainHint: rainHint, sunHint: sunHint, greeting: greeting, glanceItems: glanceItems };
+  // ---- UV index and air quality: plain-language levels (WHO UV index bands, US EPA AQI bands)
+  function uvLevel(uv) {
+    if (uv == null || isNaN(uv)) return null;
+    var v = Math.round(uv);
+    if (v <= 2) return { label: 'Low', key: 'good', value: v, tip: 'No protection needed' };
+    if (v <= 5) return { label: 'Moderate', key: 'moderate', value: v, tip: 'Sunscreen if outside for long' };
+    if (v <= 7) return { label: 'High', key: 'high', value: v, tip: 'Sunscreen, hat and shade at midday' };
+    if (v <= 10) return { label: 'Very High', key: 'bad', value: v, tip: 'Limit midday sun, cover up' };
+    return { label: 'Extreme', key: 'severe', value: v, tip: 'Avoid midday sun' };
+  }
+  function aqiLevel(aqi) {
+    if (aqi == null || isNaN(aqi)) return null;
+    var v = Math.round(aqi);
+    if (v <= 50) return { label: 'Good', key: 'good', value: v, tip: 'Air is clean' };
+    if (v <= 100) return { label: 'Moderate', key: 'moderate', value: v, tip: 'Fine for most people' };
+    if (v <= 150) return { label: 'Unhealthy for Sensitive Groups', short: 'Sensitive Groups', key: 'high', value: v, tip: 'Sensitive people should limit time outside' };
+    if (v <= 200) return { label: 'Unhealthy', key: 'bad', value: v, tip: 'Limit long time outside' };
+    if (v <= 300) return { label: 'Very Unhealthy', key: 'severe', value: v, tip: 'Avoid time outside' };
+    return { label: 'Hazardous', key: 'severe', value: v, tip: 'Stay inside' };
+  }
+
+  // ---- Countdowns: a calendar event titled "Countdown: Beach trip" (or starting with the hourglass emoji)
+  function countdownTitle(title) {
+    var m = /^\s*(?:count\s*down\s*[:\-\u2013\u2014]|\u23F3\s*[:\-\u2013\u2014]?)\s*([^\s:\-\u2013\u2014].*)$/i.exec(title || '');
+    return m ? m[1].trim() : null;
+  }
+  function dayNumber(d) { return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); }
+  // cfg: [{ name, date: 'YYYY-MM-DD' (once) or 'MM-DD' (every year) }], events: calendar occurrences.
+  // Returns [{ name, days, date, source }] sorted soonest first, from today up to 366 days ahead.
+  function countdownItems(cfg, events, now) {
+    var today = dayNumber(now), out = [], seen = {};
+    function add(name, date, source) {
+      var n = dayNumber(date) - today;
+      if (n < 0 || n > 366) return;
+      var key = name + '|' + n;
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ name: name, days: n, date: date, source: source });
+    }
+    (cfg || []).forEach(function (c) {
+      if (!c || !c.name || !c.date) return;
+      var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(c.date), d;
+      if (m) d = new Date(+m[1], +m[2] - 1, +m[3]);
+      else {
+        m = /^(\d{1,2})-(\d{1,2})$/.exec(c.date);
+        if (!m) return;
+        d = new Date(now.getFullYear(), +m[1] - 1, +m[2]);
+        if (dayNumber(d) < today) d = new Date(now.getFullYear() + 1, +m[1] - 1, +m[2]);
+      }
+      add(c.name, d, 'config');
+    });
+    (events || []).forEach(function (o) {
+      var name = countdownTitle(o.title);
+      if (name) add(name, o.start, 'calendar');
+    });
+    out.sort(function (a, b) { return a.days - b.days; });
+    return out;
+  }
+
+  // ---- The thin "day strip" under the Up Next list: today's timed events as blocks on a time line.
+  // Returns null when there are no timed events today. All numbers are percentages of the strip's width.
+  function dayStrip(events, now) {
+    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate()), end = new Date(start.getTime() + 24 * 3600000);
+    var list = (events || []).filter(function (o) { return !o.allDay && o.start < end && o.end > start && o.end > o.start; });
+    if (!list.length) return null;
+    var first = 24, last = 0;
+    list.forEach(function (o) {
+      first = Math.min(first, Math.max(0, (o.start - start) / 3600000));
+      last = Math.max(last, Math.min(24, (o.end - start) / 3600000));
+    });
+    var from = Math.min(8, Math.floor(first)), to = Math.max(20, Math.ceil(last));
+    if (to - from < 6) { to = Math.min(24, from + 6); from = Math.max(0, to - 6); }
+    var span = to - from;
+    var blocks = list.map(function (o) {
+      var s = Math.max(0, (o.start - start) / 3600000), e = Math.min(24, (o.end - start) / 3600000);
+      var left = (s - from) / span * 100, width = Math.max(1.5, (e - s) / span * 100);
+      if (left + width > 100) left = 100 - width;
+      return { left: left, width: width, color: o.color, past: o.end <= now, title: o.title };
+    });
+    var nowH = (now - start) / 3600000;
+    var step = span <= 9 ? 2 : span <= 13 ? 3 : span <= 17 ? 4 : 6, ticks = [], h;
+    for (h = from; h <= to; h += step) ticks.push({ hour: h, pct: (h - from) / span * 100 });
+    return { from: from, to: to, blocks: blocks, nowPct: nowH >= from && nowH <= to ? (nowH - from) / span * 100 : -1, ticks: ticks };
+  }
+
+  var api = { uvLevel: uvLevel, aqiLevel: aqiLevel, countdownTitle: countdownTitle, countdownItems: countdownItems, dayStrip: dayStrip, todayText: todayText, sunProgress: sunProgress, inText: inText, lengthText: lengthText, progress: progress, isWet: isWet, rainHint: rainHint, sunHint: sunHint, greeting: greeting, glanceItems: glanceItems };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else { root.TV = root.TV || {}; root.TV.smart = api; }
 })(typeof window !== 'undefined' ? window : this);

@@ -90,5 +90,61 @@ check('sun progress is 1 after sunset', s.sunProgress(today, at(19)), 1);
 check('sun progress halfway', Math.abs(s.sunProgress({ sunrise: at(6), sunset: at(18) }, at(12)) - 0.5) < 1e-9, true);
 check('sun progress without data', s.sunProgress(null, at(12)), 0);
 
+// ---- UV and air quality levels
+check('UV 0 is Low', s.uvLevel(0).label, 'Low');
+check('UV 2.4 rounds to 2: Low', s.uvLevel(2.4).label, 'Low');
+check('UV 3 is Moderate', s.uvLevel(3).label, 'Moderate');
+check('UV 5 is Moderate', s.uvLevel(5).label, 'Moderate');
+check('UV 6 is High', s.uvLevel(6).label, 'High');
+check('UV 7.4 is High', s.uvLevel(7.4).label, 'High');
+check('UV 8 is Very High', s.uvLevel(8).label, 'Very High');
+check('UV 10 is Very High', s.uvLevel(10).label, 'Very High');
+check('UV 11 is Extreme', s.uvLevel(11).label, 'Extreme');
+check('UV missing', s.uvLevel(null), null);
+check('AQI 50 is Good', s.aqiLevel(50).label, 'Good');
+check('AQI 51 is Moderate', s.aqiLevel(51).label, 'Moderate');
+check('AQI 100 is Moderate', s.aqiLevel(100).label, 'Moderate');
+check('AQI 101 is Unhealthy for Sensitive Groups', s.aqiLevel(101).label, 'Unhealthy for Sensitive Groups');
+check('AQI 151 is Unhealthy', s.aqiLevel(151).label, 'Unhealthy');
+check('AQI 201 is Very Unhealthy', s.aqiLevel(201).label, 'Very Unhealthy');
+check('AQI 301 is Hazardous', s.aqiLevel(301).label, 'Hazardous');
+check('AQI missing', s.aqiLevel(undefined), null);
+
+// ---- Countdowns
+check('title prefix "Countdown: "', s.countdownTitle('Countdown: Beach trip'), 'Beach trip');
+check('title prefix "countdown - "', s.countdownTitle('countdown - Beach trip'), 'Beach trip');
+check('hourglass prefix', s.countdownTitle('\u23F3 Concert'), 'Concert');
+check('ordinary event is not a countdown', s.countdownTitle('Dentist'), null);
+check('the word later in the title does not count', s.countdownTitle('Final countdown party'), null);
+check('empty name is not a countdown', s.countdownTitle('Countdown:'), null);
+check('the word without a separator is not a countdown', s.countdownTitle('Countdown to Christmas'), null);
+const cnow = new Date(2026, 10, 17, 15, 0);
+const items = s.countdownItems([{ name: 'Trip', date: '2026-12-20' }, { name: 'Birthday', date: '03-05' }, { name: 'Past', date: '2026-01-01' }, { name: 'Today thing', date: '2026-11-17' }, { name: 'Bad', date: 'soon' }],
+  [{ title: 'Countdown: Concert', start: new Date(2026, 11, 1, 19, 0) }, { title: 'Dentist', start: new Date(2026, 10, 20, 9, 0) }], cnow);
+check('countdowns sorted soonest first', items.map(i => i.name), ['Today thing', 'Concert', 'Trip', 'Birthday']);
+check('days to a date', items.map(i => i.days), [0, 14, 33, 108]);
+check('yearly MM-DD already passed rolls to next year', items[3].date.getFullYear(), 2027);
+check('sources', items.map(i => i.source), ['config', 'calendar', 'config', 'config']);
+check('more than 366 days away is ignored', s.countdownItems([{ name: 'Far', date: '2028-01-01' }], [], cnow), []);
+check('the same event twice shows once', s.countdownItems([], [{ title: 'Countdown: X', start: new Date(2026, 11, 1, 9) }, { title: 'Countdown: X', start: new Date(2026, 11, 1, 18) }], cnow).length, 1);
+check('countdown across the clock-change weekend counts whole days', s.countdownItems([{ name: 'D', date: '2026-11-02' }], [], new Date(2026, 9, 31, 23, 0)).map(i => i.days), [2]);
+
+// ---- Day strip
+const E = (h, m, eh, em, color, allDay) => ({ title: 'e', start: at(h, m), end: at(eh, em), color: color || '#f00', allDay: !!allDay });
+check('no timed events: no strip', s.dayStrip([E(0, 0, 23, 59, '#0f0', true)], at(12)), null);
+const ds = s.dayStrip([E(9, 0, 10, 0), E(13, 0, 14, 30), E(18, 0, 19, 0)], at(11, 30));
+check('default window is 08:00 to 20:00', [ds.from, ds.to], [8, 20]);
+check('block position and width', [Math.round(ds.blocks[0].left * 10) / 10, Math.round(ds.blocks[0].width * 10) / 10], [8.3, 8.3]);
+check('past and future blocks', ds.blocks.map(b => b.past), [true, false, false]);
+check('now marker position (11:30 of 08-20)', Math.round(ds.nowPct * 10) / 10, 29.2);
+check('tick labels every 2 hours (12-hour window)', ds.ticks.map(t => t.hour), [8, 11, 14, 17, 20]);
+const early = s.dayStrip([E(6, 30, 7, 15)], at(6, 45));
+check('an early event widens the window', [early.from, early.to], [6, 20]);
+const late = s.dayStrip([E(21, 0, 23, 30)], at(22));
+check('a late event widens the window', [late.from, late.to], [8, 24]);
+check('now marker is hidden when outside the window', s.dayStrip([E(9, 0, 10, 0)], at(23)).nowPct, -1);
+check('very short events stay visible', s.dayStrip([E(9, 0, 9, 5)], at(8)).blocks[0].width >= 1.5, true);
+check('an event across midnight is clipped', s.dayStrip([{ title: 'x', start: new Date(2026, 10, 16, 22, 0), end: at(1, 0), color: '#f00', allDay: false }], at(0, 30)).blocks.length, 1);
+
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('All smart-logic checks passed');

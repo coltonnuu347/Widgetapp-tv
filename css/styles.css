@@ -148,7 +148,7 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 #stage { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
 #app {
   position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
-  padding: 44px 60px 40px; display: flex; flex-direction: column; transition: transform 2s ease;
+  padding: 44px 60px 40px; display: flex; flex-direction: column; transition: transform 2s ease, opacity 0.9s ease;
   z-index: 0; /* own layer, so the clock's soft backdrop sits behind the text but above the background */
 }
 #hero { height: 240px; flex-shrink: 0; display: flex; align-items: flex-start; }
@@ -889,3 +889,153 @@ body { --sun-dot: #FFD60A; }
 body.mode-light { --sun-dot: #A05A00; }
 .sm-sub { display: flex; align-items: center; }
 .sun-arc { width: 56px; height: 30px; margin-right: 12px; flex-shrink: 0; overflow: visible; }
+
+
+/* ======================= Album background, photo slideshow, weather effects ======================= */
+#bg-photo2 { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; opacity: 0; }
+#bg-photo, #bg-photo2 { transition: opacity 2.4s ease; will-change: opacity; }
+#bg-photo.kb, #bg-photo2.kb { animation: kenburns 70s ease-in-out infinite alternate; }
+@keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.14); } }
+body.no-motion .kb, body[data-anim="reduced"] .kb { animation: none; }
+
+/* Album colors take over the colored lights while a song plays */
+#bg-album { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 2.6s ease; }
+#bg-album.on { opacity: 1; }
+
+/* Weather effects: thin, slow and quiet. Only transform and opacity move. */
+#bg-wx { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none;
+  --wx-ink: rgba(205, 224, 255, 0.30); --wx-snow: rgba(255, 255, 255, 0.75); --wx-cloud-fx: rgba(255, 255, 255, 0.055); --wx-fog: rgba(255, 255, 255, 0.06); --wx-sun: rgba(255, 214, 120, 0.08); }
+body.mode-light #bg-wx { --wx-ink: rgba(40, 70, 140, 0.22); --wx-snow: rgba(90, 110, 170, 0.55); --wx-cloud-fx: rgba(255, 255, 255, 0.35); --wx-fog: rgba(255, 255, 255, 0.30); --wx-sun: rgba(255, 200, 90, 0.20); }
+.fx-rain, .fx-snow, .fx-stars, .fx-fog, .fx-clouds, .fx-sun { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.fx-rain i { position: absolute; top: -100px; width: 2px; height: 64px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--wx-ink)); will-change: transform; animation: fxrain linear infinite; }
+.fx-rain.light i { width: 1.5px; height: 40px; }
+.fx-rain.heavy i { width: 2.5px; height: 80px; }
+@keyframes fxrain { from { transform: translate3d(0, 0, 0) rotate(12deg); } to { transform: translate3d(-14vw, 125vh, 0) rotate(12deg); } }
+.fx-snow i { position: absolute; top: -20px; border-radius: 50%; background: var(--wx-snow); will-change: transform; animation: fxsnow linear infinite; }
+@keyframes fxsnow { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(6vw, 118vh, 0); } }
+.fx-stars i { position: absolute; border-radius: 50%; background: #FFFFFF; opacity: 0.2; animation: fxtwinkle ease-in-out infinite alternate; }
+@keyframes fxtwinkle { from { opacity: 0.1; } to { opacity: 0.7; } }
+.fx-fog b, .fx-clouds b { position: absolute; border-radius: 50%; will-change: transform; animation: fxdrift linear infinite alternate; }
+.fx-fog b { left: -30%; width: 160%; height: 24%; background: radial-gradient(ellipse at center, var(--wx-fog) 0%, rgba(255, 255, 255, 0) 70%); }
+.fx-clouds b { width: 58%; height: 30%; left: -20%; background: radial-gradient(ellipse at center, var(--wx-cloud-fx) 0%, rgba(255, 255, 255, 0) 70%); }
+.fx-clouds b:nth-child(even) { left: 30%; }
+@keyframes fxdrift { from { transform: translate3d(-8vw, 0, 0); } to { transform: translate3d(34vw, 0, 0); } }
+.fx-sun b { position: absolute; top: -34vw; right: -14vw; width: 72vw; height: 72vw; border-radius: 50%; background: radial-gradient(circle, var(--wx-sun) 0%, rgba(255, 214, 120, 0) 62%); animation: breathe 12s ease-in-out infinite alternate; }
+body[data-anim="reduced"] #bg-wx i, body[data-anim="reduced"] #bg-wx b { animation: none; }
+body[data-anim="reduced"] .fx-rain, body[data-anim="reduced"] .fx-snow { display: none; }
+body.no-motion .fx-rain, body.no-motion .fx-snow { display: none; }
+body.no-motion #bg-wx i, body.no-motion #bg-wx b { animation: none; }
+
+/* ======================= Ambient Mode ======================= */
+#app { opacity: 1; }
+body.ambient #app { opacity: 0; visibility: hidden; transition: transform 2s ease, opacity 1.2s ease, visibility 0s linear 1.2s; }
+#ambient { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 1.2s ease, visibility 0s linear 1.2s; z-index: 4; }
+body.ambient #ambient { opacity: 1; visibility: visible; transition: opacity 1.6s ease 0.5s; }
+#amb-body { position: absolute; left: 50%; top: 50%; text-align: center; white-space: nowrap; transform: translate(-50%, -50%) translate(var(--ax, 0px), var(--ay, 0px)); transition: transform 8s ease-in-out; }
+#amb-clock { font-size: 320px; line-height: 1; font-weight: 100; letter-spacing: -6px; font-variant-numeric: tabular-nums; color: var(--text); }
+#amb-clock small { font-size: 64px; font-weight: 300; letter-spacing: 0; margin-left: 18px; }
+#amb-date { margin-top: 6px; font-size: 44px; line-height: 52px; font-weight: 500; color: var(--text); }
+#amb-line { margin-top: 18px; font-size: 32px; line-height: 40px; font-weight: 500; color: var(--text); }
+#amb-line:empty { display: none; }
+.amb-note { display: inline-block; width: 0.95em; height: 0.95em; margin-right: 12px; vertical-align: -0.1em; }
+.amb-note svg { width: 100%; height: 100%; display: block; }
+body.ambient.mode-dark #bg-dim { opacity: 0.34; }
+
+/* ======================= Sliding focus glow ======================= */
+#focus-glow {
+  position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: -1; pointer-events: none; opacity: 0; border-radius: var(--r-panel);
+  box-shadow: 0 0 70px 14px var(--ol-theme), 0 0 150px 30px var(--tint-b);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), border-radius 0.5s ease, opacity 0.35s ease;
+}
+#focus-glow.jump { transition: opacity 0.35s ease; }
+body.no-glow #focus-glow { display: none; }
+
+/* ======================= Day strip (Up Next) ======================= */
+#day-strip { display: none; flex-shrink: 0; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--sep); }
+#day-strip.on { display: block; }
+.ds-track { position: relative; height: 14px; border-radius: 7px; background: var(--chip); }
+.ds-ev { position: absolute; top: 0; bottom: 0; border-radius: 7px; opacity: 0.95; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28); }
+body.mode-light .ds-ev { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
+.ds-ev.past { opacity: 0.4; }
+.ds-now { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--text); box-shadow: 0 0 10px var(--accent2); }
+.ds-ticks { position: relative; height: 24px; margin-top: 8px; }
+.ds-ticks span { position: absolute; top: 0; font-size: 18px; line-height: 24px; color: var(--text-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ======================= Air & UV widget ======================= */
+.air-body { display: flex; flex-direction: column; }
+.air-row { margin-top: 12px; }
+.air-row:first-child { margin-top: 0; }
+.air-top { display: flex; align-items: baseline; min-width: 0; }
+.air-name { width: 132px; flex-shrink: 0; font-size: 20px; font-weight: 500; color: var(--text-2); white-space: nowrap; }
+.air-val { font-size: 34px; line-height: 38px; font-weight: 600; margin-right: 12px; font-variant-numeric: tabular-nums; }
+.air-level { min-width: 0; font-size: 22px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gauge { position: relative; height: 8px; border-radius: 4px; margin-top: 8px; }
+.gauge i { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.62), 0 2px 8px rgba(0, 0, 0, 0.4); }
+.w-wide .air-body { flex-direction: row; }
+.w-wide .air-row { flex: 1; margin: 0 28px 0 0; min-width: 0; }
+.w-wide .air-row:last-child { margin-right: 0; }
+.w-wide .air-top { flex-wrap: wrap; }
+.w-wide .air-name { width: 100%; }
+.air-big { margin-top: 26px; }
+.air-big-top { display: flex; align-items: center; }
+.air-big-val { font-size: 110px; line-height: 110px; font-weight: 200; letter-spacing: -2px; margin-right: 28px; font-variant-numeric: tabular-nums; }
+.air-big-name { font-size: 26px; color: var(--text-2); }
+.air-big-level { font-size: 44px; line-height: 52px; font-weight: 700; }
+.air-big-tip { margin: 12px 0 18px; font-size: 26px; color: var(--text-2); }
+.air-big .gauge { height: 12px; border-radius: 6px; margin-top: 0; }
+.air-big .gauge i { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+.gauge-scale { position: relative; height: 28px; margin-top: 10px; font-size: 20px; line-height: 28px; color: var(--text-3); }
+.gauge-scale span { position: absolute; top: 0; white-space: nowrap; }
+
+/* ======================= Countdown widget ======================= */
+.cd-body { display: flex; align-items: center; }
+.cd-hero { flex-shrink: 0; margin-right: 26px; text-align: center; min-width: 130px; }
+.cd-num { font-size: 92px; line-height: 92px; font-weight: 200; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.cd-num.word { font-size: 38px; line-height: 50px; font-weight: 600; letter-spacing: 0; }
+.cd-unit { margin-top: 2px; font-size: 22px; color: var(--text-2); }
+.cd-info { min-width: 0; flex: 1; }
+.cd-name { font-size: 30px; line-height: 36px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-date { font-size: 22px; line-height: 30px; color: var(--text-2); }
+.cd-others { display: none; margin-top: 12px; }
+.w-wide .cd-others { display: block; }
+.cd-other { display: flex; justify-content: space-between; font-size: 20px; line-height: 28px; color: var(--text-2); }
+.cd-other-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 14px; }
+.cd-other-when { flex-shrink: 0; }
+.rows-2 .cd-num { font-size: 64px; line-height: 64px; }
+.rows-2 .cd-num.word { font-size: 30px; line-height: 40px; }
+.rows-2 .cd-hero { min-width: 104px; margin-right: 20px; }
+.rows-2 .cd-name { font-size: 24px; line-height: 30px; }
+.rows-2 .cd-date { font-size: 20px; line-height: 26px; }
+
+/* Large tiles (a single row): the new widgets use the extra room. These tiles are as short as 338px
+   (Large clock), so everything is sized to fit that, and the extras appear only where there is width. */
+.rows-1 .air-body { padding-top: 4px; }
+.rows-1 .air-row { margin-top: 24px; }
+.rows-1 .air-row:first-child { margin-top: 0; }
+.rows-1 .air-name { width: 140px; font-size: 22px; }
+.rows-1 .air-val { font-size: 52px; line-height: 56px; margin-right: 14px; font-weight: 300; }
+.rows-1 .air-level { font-size: 26px; }
+.rows-1 .gauge { height: 12px; border-radius: 6px; margin-top: 10px; }
+.rows-1 .gauge i { width: 20px; height: 20px; margin: -10px 0 0 -10px; }
+.rows-1 .w-wide .air-body { padding-top: 18px; }
+.rows-1 .w-wide .air-row { margin-top: 0; }
+.rows-1 .w-wide .air-top { flex-wrap: wrap; }
+.rows-1 .w-wide .air-name { width: 100%; }
+.rows-2 .air-row { margin-top: 6px; }
+.rows-2 .air-row:first-child { margin-top: 0; }
+.rows-2 .air-val { line-height: 34px; }
+.cd-others { display: none; }
+.rows-1 .cd-body { flex-direction: column; justify-content: flex-start; text-align: center; padding-top: 2px; }
+.rows-1 .cd-hero { margin: 0 0 4px; min-width: 0; }
+.rows-1 .cd-num { font-size: 104px; line-height: 104px; letter-spacing: -3px; }
+.rows-1 .cd-num.word { font-size: 56px; line-height: 70px; }
+.rows-1 .cd-unit { font-size: 26px; line-height: 28px; margin-top: 0; }
+.rows-1 .cd-info { width: 100%; }
+.rows-1 .cd-name { font-size: 34px; line-height: 40px; }
+.rows-1 .cd-date { font-size: 24px; line-height: 30px; }
+.rows-1 .w-wide .cd-body { flex-direction: row; justify-content: flex-start; text-align: left; padding-top: 10px; }
+.rows-1 .w-wide .cd-hero { margin: 0 36px 0 0; min-width: 220px; text-align: center; }
+.rows-1 .w-wide .cd-info { width: auto; flex: 1; }
+.rows-1 .w-wide .cd-others { display: block; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--sep); }
+.rows-1 .w-wide .cd-others:empty { display: none; }
+.rows-1 .cd-other { font-size: 22px; line-height: 30px; }

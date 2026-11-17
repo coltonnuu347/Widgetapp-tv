@@ -116,8 +116,11 @@
   }
 
   function onKey(e) {
-    bumpIdle();
     var k = e.keyCode, active = document.activeElement;
+    // While Ambient Mode is resting, the first press only wakes the screen (play/pause/skip still control Spotify)
+    var isMedia = k === KEY.PLAY_PAUSE || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.NEXT || k === KEY.PREV;
+    if (TV.ambient && TV.ambient.onKey(e, isMedia)) return;
+    bumpIdle();
     var typing = active && active.tagName === 'INPUT';
 
     if (typing) {

@@ -4,6 +4,7 @@
   var now = new Date();
   function ymd(d) { return d.getFullYear() + TV.pad(d.getMonth() + 1) + TV.pad(d.getDate()); }
   function local(d, h, m) { return ymd(d) + 'T' + TV.pad(h) + TV.pad(m || 0) + '00'; }
+  var d40 = TV.addDays(TV.startOfDay(now), 40);
   var today = TV.startOfDay(now), tmr = TV.addDays(today, 1), d2 = TV.addDays(today, 2), d3 = TV.addDays(today, 3), d5 = TV.addDays(today, 5);
   var h = now.getHours();
 
@@ -17,6 +18,7 @@
     'BEGIN:VEVENT', 'UID:d6', 'DTSTART;VALUE=DATE:' + ymd(d2), 'DTEND;VALUE=DATE:' + ymd(TV.addDays(d2, 1)), 'SUMMARY:Jordan’s Birthday', 'END:VEVENT',
     'BEGIN:VEVENT', 'UID:d7', 'DTSTART:' + local(d3, 10, 0), 'DTEND:' + local(d3, 11, 0), 'SUMMARY:Car service', 'END:VEVENT',
     'BEGIN:VEVENT', 'UID:d8', 'DTSTART;VALUE=DATE:' + ymd(d5), 'DTEND;VALUE=DATE:' + ymd(TV.addDays(d5, 2)), 'SUMMARY:Weekend trip', 'END:VEVENT',
+    'BEGIN:VEVENT', 'UID:d9', 'DTSTART;VALUE=DATE:' + ymd(d40), 'DTEND;VALUE=DATE:' + ymd(TV.addDays(d40, 1)), 'SUMMARY:Countdown: Concert night', 'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
 
@@ -47,6 +49,7 @@
 
   var routes = [
     [/ipapi\.co/, { city: 'Denver', region_code: 'CO', country_code: 'US', latitude: 39.7392, longitude: -104.9903 }],
+    [/air-quality-api\.open-meteo\.com/, { current: { us_aqi: 42, pm2_5: 9.6, uv_index: 6.4 } }],
     [/api\.open-meteo\.com/, weather],
     [/api\.weather\.gov/, { features: [{ properties: { event: 'Wind Advisory (sample)', severity: 'Moderate', headline: 'Sample alert for preview mode', description: 'This is sample text. On your TV this shows the full alert from the National Weather Service.', instruction: 'Sample instructions appear here.', senderName: 'NWS (sample)', ends: new Date(now.getTime() + 6 * 3600000).toISOString() } }] }],
     [/date\.nager\.at/, (function () {
@@ -102,6 +105,8 @@
   TV_CONFIG.wifi = { ssid: 'Guest Network', password: 'sample-password', security: 'WPA' };
   TV_CONFIG.commute = { mapboxToken: 'demo', from: '39.7392,-104.9903', to: '39.6,-104.9', label: 'Work', showFrom: '00:00', showUntil: '23:59' };
   TV_CONFIG.spotify = { clientId: 'demo', refreshToken: 'demo' };
+  TV_CONFIG.countdowns = [{ name: 'Beach trip', date: (function (d) { return d.getFullYear() + '-' + TV.pad(d.getMonth() + 1) + '-' + TV.pad(d.getDate()); })(TV.addDays(today, 23)) }];
+  TV_CONFIG.wallpapers = ['demo-dunes.svg', 'demo-lake.svg', 'demo-forest.svg'];
   TV.settings.manualLocation = null;
   TV.settings.widgets.disabled = []; // the general preview shows every widget
   TV.saveSettings = function () { /* preview: don't save */ };

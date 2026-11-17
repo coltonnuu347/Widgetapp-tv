@@ -1,6 +1,8 @@
 // The line under the clock: at most two items, most important first (see js/smart.js).
 // Also the greeting above the date.
 (function (TV) {
+  var lastTexts = [];
+  TV.glanceTexts = function () { return lastTexts; };
   function render() {
     var now = new Date(), w = TV.weather;
     var items = TV.smart.glanceItems({
@@ -14,6 +16,7 @@
       fmt: TV.fmtTime,
       dayLabel: TV.dayLabel
     });
+    lastTexts = items.map(function (it) { return (it.label ? it.label + ' ' : '') + it.text; });
     var html = items.map(function (it) {
       return '<span class="gl-item' + (it.urgent ? ' urgent' : '') + '">' + (it.label ? '<b>' + TV.esc(it.label) + '</b> ' : '') + TV.esc(it.text) + '</span>';
     }).join('<span class="glance-sep">·</span>');

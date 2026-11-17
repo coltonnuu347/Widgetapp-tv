@@ -10,7 +10,8 @@
     calDays: Math.max(1, TV_CONFIG.calendarDays || 7), hours: 12, unit: 'F',
     statHilo: true, statFeels: true, statHumidity: true, statWind: true,
     anim: 'full', greeting: true, nightDim: true,
-    spotifyWide: true
+    spotifyWide: true,
+    albumBg: true, wxfx: true, ambient: 10
   };
 
   var DEFAULTS = {
