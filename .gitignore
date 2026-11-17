@@ -1,0 +1,9 @@
+# Private settings: never commit these
+config.local.js
+spotify.local.js
+
+# Local files
+.DS_Store
+node_modules/
+*.zip
+*.log

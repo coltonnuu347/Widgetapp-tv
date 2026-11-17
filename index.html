@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="mode-dark">
+  <div id="background">
+    <div id="bg-gradient">
+      <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="orb o4"></div><div class="orb o5"></div>
+      <div class="sweep"></div>
+    </div>
+    <div id="bg-photo"></div>
+    <div id="bg-tod"></div>
+    <div id="bg-scrim"></div>
+    <div id="bg-dim"></div>
+  </div>
+
+  <div id="stage">
+    <div id="app">
+      <header id="hero">
+        <div id="clock-block">
+          <div id="date"><span id="greeting"></span><span id="date-text"></span></div>
+          <div id="clock-wrap">
+            <div id="clock"><span id="clock-h">--</span><span id="clock-colon">:</span><span id="clock-m">--</span><span id="clock-s"></span><span id="clock-ampm"></span></div>
+            <div id="clock-rule"></div>
+          </div>
+          <div id="glance"></div>
+        </div>
+        <div id="ornaments">
+          <div id="alert-banner" class="hidden" data-focus data-detail="alerts" tabindex="0"></div>
+          <button class="orn-button" id="btn-theme" data-focus aria-label="Theme">
+            <span class="icon" data-icon="paintpalette"></span><span class="orn-label">Theme</span>
+          </button>
+          <button class="orn-button" id="btn-settings" data-focus aria-label="Settings">
+            <span class="icon" data-icon="gear"></span><span class="orn-label">Settings</span>
+          </button>
+        </div>
+      </header>
+
+      <main id="panels">
+        <section class="card" id="card-calendar" data-focus data-detail="calendar" tabindex="0">
+          <div class="card-title"><span class="badge"><span class="icon" data-icon="calendar"></span></span><span class="ct-text">Up Next</span><span class="ct-sub" id="cal-sub"></span></div>
+          <div id="calendar-list"></div>
+        </section>
+
+        <div id="right-col">
+          <section class="card" id="card-weather" data-focus data-detail="weather" tabindex="0">
+            <div id="weather-now"></div>
+            <div id="weather-hourly" class="hourly"></div>
+          </section>
+
+          <section id="widget-area">
+            <div id="widget-slots"></div>
+            <div id="widget-dots"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div id="overlay" class="hidden">
+      <div class="sheet" id="sheet-theme" hidden></div>
+      <div class="sheet" id="sheet-settings" hidden></div>
+      <div class="sheet" id="sheet-detail" hidden></div>
+      <div id="sheet-hint">Press Back to close</div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="config.local.js"></script>
+  <script src="spotify.local.js"></script>
+  <script src="js/lib/qrcode.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ics.js"></script>
+  <script src="js/location.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/smart.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/themes.js"></script>
+  <script src="js/prefs.js"></script>
+  <script src="js/glance.js"></script>
+  <script src="js/pack.js"></script>
+  <script src="js/widgets/registry.js"></script>
+  <script src="js/widgets/sun-moon.js"></script>
+  <script src="js/widgets/alerts.js"></script>
+  <script src="js/widgets/wifi.js"></script>
+  <script src="js/widgets/dates.js"></script>
+  <script src="js/widgets/commute.js"></script>
+  <script src="js/widgets/nasa.js"></script>
+  <script src="js/widgets/spotify.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
