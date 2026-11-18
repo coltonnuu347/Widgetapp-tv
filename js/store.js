@@ -15,7 +15,7 @@
   };
 
   var DEFAULTS = {
-    theme: { style: 'gradient', gradient: 'purple', photo: '', mode: 'auto' },
+    theme: { style: 'gradient', gradient: 'purple', photo: '', art: '', mode: 'auto' },
     // Calendars added on the TV (on top of the ones in config.local.js), and config ones you hid.
     extraCalendars: [],
     hiddenCalendars: [],
@@ -23,6 +23,8 @@
     manualLocation: null,
     // Starts with the widgets config.local.js turns off; changes made on the TV are saved over this.
     widgets: { order: [], disabled: (TV_CONFIG.widgetsOff || []).slice() },
+    // Streaming apps on the Apps page: your order, and the ones you turned off
+    apps: { order: [], disabled: [] },
     prefs: JSON.parse(JSON.stringify(TV.PREF_DEFAULTS))
   };
 

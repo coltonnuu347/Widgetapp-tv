@@ -39,6 +39,7 @@
       var sheet = TV.$$('.sheet', ov).filter(function (s) { return !s.hidden; })[0];
       if (sheet) return sheet;
     }
+    if (TV.pager && TV.pager.page() === 'apps') return TV.$('#apps');
     return TV.$('#app');
   }
 
@@ -82,13 +83,23 @@
       return;
     }
     // Nothing further that way:
-    // - past the last widget -> show the next page of widgets
+    // - on the Apps page, up from the top row -> back to Home
+    if (TV.pager && TV.pager.page() === 'apps') {
+      if (dir === 'up') TV.pager.go('home');
+      return;
+    }
+    // - past the last widget on the right -> show the next page of widgets
     var slots = TV.$('#widget-slots');
-    if (slots.contains(cur) && (dir === 'right' || dir === 'down')) {
+    if (slots.contains(cur) && dir === 'right') {
       if (TV.widgets.changePage(1)) {
         var first = TV.$('[data-focus]', slots);
         if (first) first.focus();
       }
+      return;
+    }
+    // - below the last row on Home -> slide down to the Apps page
+    if (dir === 'down' && r === TV.$('#app') && TV.pager) {
+      TV.pager.go('apps');
       return;
     }
     // - in a long panel -> scroll it
@@ -111,6 +122,7 @@
 
   function back() {
     if (!TV.$('#overlay').classList.contains('hidden')) { TV.closeSheet(); return; }
+    if (TV.pager && TV.pager.page() === 'apps') { TV.pager.go('home'); return; }
     if (document.activeElement && document.activeElement !== document.body) { document.activeElement.blur(); return; }
     try { tizen.application.getCurrentApplication().exit(); } catch (e) { /* browser preview */ }
   }

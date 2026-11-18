@@ -8,12 +8,17 @@
     <tizen:profile name="tv-samsung"/>
     <tizen:privilege name="http://tizen.org/privilege/internet"/>
     <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <!-- Apps page: ask the TV which apps are installed, and open them -->
+    <tizen:privilege name="http://tizen.org/privilege/application.info"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:privilege name="http://tizen.org/privilege/appmanager.launch"/>
     <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
 
     <!-- Network access. Every host the app talks to must be listed here. -->
     <access origin="https://icloud.com" subdomains="true"/>
     <access origin="https://workers.dev" subdomains="true"/>
     <access origin="https://open-meteo.com" subdomains="true"/>
+    <access origin="https://rainviewer.com" subdomains="true"/>
     <access origin="https://weather.gov" subdomains="true"/>
     <access origin="https://ipapi.co" subdomains="true"/>
     <access origin="https://geojs.io" subdomains="true"/>

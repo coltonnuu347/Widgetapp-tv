@@ -41,6 +41,8 @@
     if (sec < lastSec) { wrap.classList.add('sec-jump'); setTimeout(function () { wrap.classList.remove('sec-jump'); }, 60); }
     wrap.style.setProperty('--sec', (sec / 59).toFixed(3));
     lastSec = sec;
+    var ac = TV.$('#apps-clock'), at = TV.fmtTime(now);   // the clock on the Apps page
+    if (ac && ac.textContent !== at) ac.textContent = at;
     if (TV.ambient && TV.ambient.active()) TV.ambient.update(now);
   }
 

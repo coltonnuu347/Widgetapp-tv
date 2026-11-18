@@ -100,7 +100,7 @@
     var cur = data.current, info = wmo(cur.code, cur.isDay), p = TV.settings.prefs;
     TV.$('#weather-now').innerHTML =
       '<div class="wx-temp">' + deg(cur.temp) + '</div>' +
-      '<div class="wx-icon-big">' + TV.icon(info.icon) + '</div>' +
+      '<div class="wx-icon-big">' + TV.icon(info.icon, TV.motionOn()) + '</div>' +
       '<div class="wx-main">' +
         '<div class="wx-cond">' + TV.esc(info.text) + '</div>' +
         '<div class="wx-place"><span class="icon">' + TV.icon('location') + '</span>' + TV.esc(TV.placeLabel(loc) || 'Your location') + '</div>' +
@@ -174,7 +174,7 @@
       var cur = data.current, info = wmo(cur.code, cur.isDay);
       var now = new Date();
       el.innerHTML = '<h2>' + TV.esc(TV.placeLabel(TV.location) || 'Weather') + '</h2>' +
-        '<div class="dw-now"><div class="dw-icon">' + TV.icon(info.icon) + '</div>' +
+        '<div class="dw-now"><div class="dw-icon">' + TV.icon(info.icon, TV.motionOn()) + '</div>' +
         '<div class="dw-temp">' + deg(cur.temp) + '</div>' +
         '<div class="dw-info"><div class="wx-cond">' + TV.esc(info.text) + '</div>' +
         '<div class="wx-hilo">H:' + deg(data.today.max) + '&nbsp;&nbsp;L:' + deg(data.today.min) + '</div>' +

@@ -99,9 +99,11 @@
 
   // The whole screen takes the album's colors while a song plays (or for 3 minutes after you pause it).
   function syncAlbum() {
-    var want = TV.settings.prefs.albumBg && state && palette && (state.is_playing || (pausedSince && Date.now() - pausedSince < 3 * 60000));
+    // a picture you chose as the background (photo, artwork, NASA, slideshow) always wins over the album colors
+    var want = TV.settings.prefs.albumBg && !(TV.photoThemeActive && TV.photoThemeActive()) && state && palette && (state.is_playing || (pausedSince && Date.now() - pausedSince < 3 * 60000));
     TV.setAlbumBackground(want ? palette : null);
   }
+  TV.syncAlbum = syncAlbum;
   TV.on('prefs', syncAlbum);
   setInterval(syncAlbum, 30 * 1000);
 

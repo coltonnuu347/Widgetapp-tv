@@ -150,16 +150,23 @@
     st.setProperty('--ol-top', dark ? rgba(theme.glow, 0.95) : rgba(theme.accent, 0.95)); // brighter top edge
 
     var gradEl = TV.$('#bg-gradient');
-    var photoUrl = '', walls = TV_CONFIG.wallpapers || [], moving = false;
+    var photoUrl = '', walls = TV_CONFIG.wallpapers || [], moving = false, chosen = false, art = TV.artById(t.art), scrim = null;
     if (t.style === 'photo' && t.photo && walls.indexOf(t.photo) >= 0) {
-      photoUrl = TV.wallUrl(t.photo);
+      photoUrl = TV.wallUrl(t.photo); chosen = true;
+    } else if (t.style === 'art' && art) {
+      photoUrl = TV.artUrl(art); chosen = true; scrim = art.scrim;
     } else if (t.style === 'nasa' && TV.nasaPhoto) {
-      photoUrl = TV.nasaPhoto.url;
-    } else if (walls.length && (t.style === 'slideshow' || ambientSlides)) {
-      // Slideshow (and the ambient "photo frame"): one photo after another, each with a slow pan
-      photoUrl = TV.wallUrl(walls[slideIndex % walls.length]);
-      moving = true;
+      photoUrl = TV.nasaPhoto.url; chosen = true;
+    } else {
+      // Slideshow (artwork and your photos), or Ambient Mode's photo frame (your photos): one picture
+      // after another, each with a slow pan
+      var list = slideList();
+      if (list.length) { var item = list[slideIndex % list.length]; photoUrl = item.url; scrim = item.scrim; moving = true; chosen = t.style === 'slideshow'; }
     }
+    // A picture you chose as the background always wins over the album colors (see TV.setAlbumBackground)
+    photoChosen = chosen && !!photoUrl;
+    // Built-in artwork is mostly dark, so in Dark mode it needs a lighter readability layer than a random photo
+    if (scrim != null && photoUrl && dark) st.setProperty('--scrim', 'rgba(0, 0, 0, ' + scrim + ')'); else st.removeProperty('--scrim');
 
     if (photoUrl) {
       showPhoto(photoUrl, moving);
@@ -173,10 +180,22 @@
       gradEl.style.opacity = '1';
       showPhoto('', false);
     }
+    if (TV.syncAlbum) TV.syncAlbum();
   };
 
   // ---------- Photos: two layers, so one photo fades into the next ----------
-  var photoFront = 0, shownUrl = '', slideIndex = 0, ambientSlides = false, SLIDE_MS = 120 * 1000;
+  var photoFront = 0, shownUrl = '', slideIndex = 0, ambientSlides = false, photoChosen = false, SLIDE_MS = 120 * 1000;
+  // True while the background is a picture you picked (photo, artwork, NASA or the slideshow)
+  TV.photoThemeActive = function () { return photoChosen; };
+  // What the slideshow cycles through: the Slideshow theme uses the artwork and your photos together;
+  // Ambient Mode's photo frame uses only your own photos.
+  function slideList() {
+    var out = [], style = TV.settings.theme.style;
+    if (style === 'slideshow') TV.ART.forEach(function (a) { out.push({ url: TV.artUrl(a), scrim: a.scrim }); });
+    if (style === 'slideshow' || ambientSlides) (TV_CONFIG.wallpapers || []).forEach(function (f) { out.push({ url: TV.wallUrl(f), scrim: null }); });
+    return out;
+  }
+  TV.slideCount = function () { return slideList().length; };
   function showPhoto(url, moving) {
     var layers = [TV.$('#bg-photo'), TV.$('#bg-photo2')], cur = layers[photoFront], next = layers[1 - photoFront];
     if (!url) { layers[0].style.opacity = '0'; layers[1].style.opacity = '0'; shownUrl = ''; return; }
@@ -191,18 +210,12 @@
     photoFront = 1 - photoFront;
     shownUrl = url;
   }
-  setInterval(function () {
-    var walls = TV_CONFIG.wallpapers || [];
-    if (walls.length > 1 && (TV.settings.theme.style === 'slideshow' || ambientSlides)) {
-      slideIndex = (slideIndex + 1) % walls.length;
-      TV.applyTheme();
-    }
-  }, SLIDE_MS);
+  setInterval(function () { TV.nextSlide(); }, SLIDE_MS);
   // Used by Ambient Mode: show your photos as a slideshow while the screen is resting.
   TV.setAmbientSlides = function (on) { ambientSlides = !!on; TV.applyTheme(); };
   TV.nextSlide = function () {
-    var walls = TV_CONFIG.wallpapers || [];
-    if (walls.length) { slideIndex = (slideIndex + 1) % walls.length; TV.applyTheme(); }
+    var n = slideList().length;
+    if (n > 1) { slideIndex = (slideIndex + 1) % n; TV.applyTheme(); }
   };
 
   // ---------- Album background (Spotify) ----------
@@ -234,6 +247,7 @@
   };
 
   // ---------- Theme sheet ----------
+  var nasaNote = '';
   function tile(opts) {
     return '<button class="tile' + (opts.selected ? ' selected' : '') + '" data-focus data-action="' + opts.action + '" data-value="' + TV.esc(opts.value) + '">' +
       '<div class="tile-swatch" style="' + opts.style + '">' + (opts.selected ? '<span class="tile-check">' + TV.icon('check') + '</span>' : '') + '</div>' +
@@ -250,6 +264,21 @@
       });
       html += '</div>';
     });
+    // Built-in artwork: always available, no setup. The Slideshow cycles through it (and your own photos).
+    html += '<div class="section-label">Artwork</div><div class="tile-row">';
+    TV.ART.forEach(function (a) {
+      html += tile({
+        action: 'art', value: a.id, name: a.name,
+        selected: t.style === 'art' && t.art === a.id,
+        style: 'background-image:url(&quot;' + TV.esc(TV.artUrl(a)) + '&quot;)'
+      });
+    });
+    html += tile({
+      action: 'slideshow', value: 'slideshow', name: 'Slideshow',
+      selected: t.style === 'slideshow',
+      style: 'background-image:url(&quot;' + TV.esc(TV.artUrl(TV.ART[0])) + '&quot;)'
+    });
+    html += '</div>';
     html += '<div class="section-label">Photos</div><div class="tile-row">';
     (TV_CONFIG.wallpapers || []).forEach(function (f) {
       html += tile({
@@ -258,19 +287,13 @@
         style: 'background-image:url(&quot;' + TV.esc(TV.wallUrl(f)) + '&quot;)'
       });
     });
-    if ((TV_CONFIG.wallpapers || []).length > 1) {
-      html += tile({
-        action: 'slideshow', value: 'slideshow', name: 'Slideshow',
-        selected: t.style === 'slideshow',
-        style: 'background-image:url(&quot;' + TV.esc(TV.wallUrl(TV_CONFIG.wallpapers[0])) + '&quot;)'
-      });
-    }
     html += tile({
-      action: 'nasa', value: 'nasa', name: 'NASA Photo',
+      action: 'nasa', value: 'nasa', name: TV.nasaPhoto ? 'NASA Photo' : 'NASA (not loaded)',
       selected: t.style === 'nasa',
       style: TV.nasaPhoto ? 'background-image:url(&quot;' + TV.esc(TV.nasaPhoto.url) + '&quot;)' : 'background:#0b0d17'
     });
     html += '</div>';
+    if (nasaNote) html += '<div class="hint">' + TV.esc(nasaNote) + '</div>';
     if (!(TV_CONFIG.wallpapers || []).length) {
       html += '<div class="hint">Add your own photos: put them in images/wallpapers/ and list them in config.local.js.</div>';
     }
@@ -286,7 +309,19 @@
     var t = TV.settings.theme;
     if (action === 'gradient') { t.style = 'gradient'; t.gradient = value; }
     else if (action === 'photo') { t.style = 'photo'; t.photo = value; }
-    else if (action === 'nasa') { t.style = 'nasa'; }
+    else if (action === 'art') { t.style = 'art'; t.art = value; }
+    else if (action === 'nasa') {
+      if (!TV.nasaPhoto) {
+        // Nothing to show yet: say so (the shared NASA key is often busy) and try again, instead of doing nothing
+        nasaNote = 'The NASA photo has not loaded yet (NASA’s shared key is sometimes busy). Trying again now; it also needs the TV to be online. A free key in config.local.js (c.nasaApiKey) makes this reliable.';
+        if (TV.nasaRetry) TV.nasaRetry();
+        TV.renderThemeSheet();
+        var nt = TV.$('#sheet-theme [data-action="nasa"]');
+        if (nt) nt.focus();
+        return true;
+      }
+      t.style = 'nasa';
+    }
     else if (action === 'slideshow') { t.style = 'slideshow'; }
     else if (action === 'mode') { t.mode = value; }
     else return false;
@@ -322,6 +357,8 @@
 
   TV.on('weather', TV.applyTheme);
   TV.on('nasa', function () {
+    nasaNote = '';
     if (TV.settings.theme.style === 'nasa') TV.applyTheme();
+    if (!TV.$('#sheet-theme').hidden) TV.renderThemeSheet();   // the NASA tile gets its picture
   });
 })(window.TV);

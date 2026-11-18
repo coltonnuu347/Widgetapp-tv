@@ -58,6 +58,8 @@ body.mode-dark {
   --sep: rgba(255, 255, 255, 0.13);
   --chip: rgba(255, 255, 255, 0.12);
   --chip-strong: rgba(255, 255, 255, 0.20);
+  /* Event cards sit darker than the glass in Dark mode (and lighter in Light mode), which can only raise contrast */
+  --ev-bg: rgba(0, 0, 0, 0.20); --ev-bg-now: rgba(0, 0, 0, 0.32); --ev-chip: rgba(255, 255, 255, 0.14);
   --cell: rgba(0, 0, 0, 0.20); /* inset list cells: darker, so faint text stays readable on them */
   --scrim: rgba(0, 0, 0, 0.42);
   --vignette: radial-gradient(ellipse at 50% 42%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.34) 100%);
@@ -65,6 +67,7 @@ body.mode-dark {
   --focus-ring: #FFFFFF;
   --sev-high: #FF6961; --sev-mid: #FF9F0A; --sev-low: #FFD60A;
   --wx-cloud: #F2F2F7; --wx-cloud-dark: #AEAEB2; --wx-moon: #E5E5EA; --wx-rain: #64D2FF; --wx-snow: #FFFFFF;
+  --wx-cloud-hi: #FFFFFF; --wx-cloud-lo: #CED3E0; --wx-cloud-dark-hi: #C9CDDA; --wx-cloud-dark-lo: #8D92A5; --wx-moon-hi: #FFFFFF; --wx-moon-lo: #C3C9DD; --wx-glow-a: 0.28; --wx-rain-hi: #A6E8FF; --wx-rain-lo: #3DB4FF; --wx-snow-ink: #FFFFFF;
   --moon-lit: #F2F2F7; --moon-dark: #3A3A3C;
 }
 body.mode-light {
@@ -84,6 +87,7 @@ body.mode-light {
   --sep: rgba(60, 60, 67, 0.16);
   --chip: rgba(0, 0, 0, 0.07);
   --chip-strong: rgba(0, 0, 0, 0.12);
+  --ev-bg: rgba(255, 255, 255, 0.42); --ev-bg-now: rgba(255, 255, 255, 0.60); --ev-chip: rgba(0, 0, 0, 0.06);
   --cell: rgba(0, 0, 0, 0.05);
   --scrim: rgba(255, 255, 255, 0.45);
   --vignette: radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, 0) 45%, rgba(255, 255, 255, 0.22) 100%);
@@ -92,6 +96,7 @@ body.mode-light {
   --sev-high: #C00012; --sev-mid: #B23A00; --sev-low: #7A5200;
   /* Icons need 3:1 against the light glass: #8E8E93 on white is 3.3:1 */
   --wx-cloud: #8E8E93; --wx-cloud-dark: #636366; --wx-moon: #8E8E93; --wx-rain: #0071E3; --wx-snow: #8E8E93;
+  --wx-cloud-hi: #7C8192; --wx-cloud-lo: #5F6475; --wx-cloud-dark-hi: #5A5F70; --wx-cloud-dark-lo: #3C4050; --wx-moon-hi: #7C8192; --wx-moon-lo: #5F6475; --wx-glow-a: 0; --wx-rain-hi: #4AA3FF; --wx-rain-lo: #0058C2; --wx-snow-ink: #6E7384;
   --moon-lit: #FFFFFF; --moon-dark: #636366;
 }
 
@@ -277,15 +282,6 @@ body.mode-light .orn-button:focus { background: var(--accent); color: #FFFFFF; }
 .tl-time { width: 92px; flex-shrink: 0; text-align: right; padding: 12px 0; font-variant-numeric: tabular-nums; }
 .tl-start { font-size: 22px; line-height: 32px; font-weight: 600; color: var(--text); white-space: nowrap; }
 .tl-end { font-size: 20px; line-height: 26px; color: var(--text-3); white-space: nowrap; }
-.tl-rail { width: 44px; flex-shrink: 0; position: relative; }
-.tl-rail::before { content: ""; position: absolute; left: 21px; top: 0; bottom: 0; width: 2px; background: var(--sep); }
-.day-label + .event .tl-rail::before { top: 28px; }
-.event:last-child .tl-rail::before { bottom: auto; height: 28px; }
-.day-label + .event:last-child .tl-rail::before { display: none; }
-.tl-dot {
-  position: absolute; left: 14px; top: 20px; width: 16px; height: 16px; border-radius: 8px;
-  box-shadow: 0 0 0 4px var(--chip), 0 0 14px rgba(255, 255, 255, 0.25);
-}
 .event-body { min-width: 0; flex: 1; padding: 12px 0; }
 .event-title { font-size: 28px; line-height: 32px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .event-meta { font-size: 20px; line-height: 26px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -507,7 +503,6 @@ body.mode-light .btn.toggle:focus::after { background: #FFFFFF; }
 .detail-cal .tl-time { width: 120px; }
 .detail-cal .tl-start { font-size: 28px; line-height: 38px; }
 .detail-cal .tl-end { font-size: 22px; }
-.detail-cal .tl-dot { top: 24px; }
 .detail-cal .event-title { font-size: 32px; line-height: 38px; white-space: normal; }
 .detail-cal .event-meta { font-size: 24px; line-height: 30px; white-space: normal; }
 
@@ -928,7 +923,7 @@ body.no-motion #bg-wx i, body.no-motion #bg-wx b { animation: none; }
 
 /* ======================= Ambient Mode ======================= */
 #app { opacity: 1; }
-body.ambient #app { opacity: 0; visibility: hidden; transition: transform 2s ease, opacity 1.2s ease, visibility 0s linear 1.2s; }
+body.ambient #pager { opacity: 0; visibility: hidden; transition: transform 0.7s cubic-bezier(0.22, 0.8, 0.2, 1), opacity 1.2s ease, visibility 0s linear 1.2s; }
 #ambient { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 1.2s ease, visibility 0s linear 1.2s; z-index: 4; }
 body.ambient #ambient { opacity: 1; visibility: visible; transition: opacity 1.6s ease 0.5s; }
 #amb-body { position: absolute; left: 50%; top: 50%; text-align: center; white-space: nowrap; transform: translate(-50%, -50%) translate(var(--ax, 0px), var(--ay, 0px)); transition: transform 8s ease-in-out; }
@@ -1039,3 +1034,136 @@ body.mode-light .ds-ev { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
 .rows-1 .w-wide .cd-others { display: block; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--sep); }
 .rows-1 .w-wide .cd-others:empty { display: none; }
 .rows-1 .cd-other { font-size: 22px; line-height: 30px; }
+
+
+/* ======================= Pages: Home above, Apps below ======================= */
+#pager { position: absolute; top: 0; left: 0; width: 1920px; height: 2160px; transition: transform 0.7s cubic-bezier(0.22, 0.8, 0.2, 1), opacity 0.9s ease; }
+#pager[data-page="apps"] { transform: translate3d(0, -1080px, 0); }
+/* The page that is off screen is not drawn at all (saves the TV work), once the slide is over */
+#pager[data-page="apps"] #app { visibility: hidden; transition: transform 2s ease, visibility 0s linear 0.8s; }
+#pager[data-page="home"] #apps { visibility: hidden; transition: visibility 0s linear 0.8s; }
+#home-hint { position: absolute; right: 60px; bottom: 12px; font-size: 22px; line-height: 28px; font-weight: 600; color: var(--text); }
+#apps { position: absolute; top: 1080px; left: 0; width: 1920px; height: 1080px; z-index: 0; }
+#apps-head { position: absolute; top: 56px; left: 60px; right: 60px; display: flex; align-items: baseline; }
+#apps-title { flex: 1; font-size: 64px; line-height: 72px; font-weight: 700; letter-spacing: -1.5px; color: var(--text); }
+#apps-clock { font-size: 40px; font-weight: 300; font-variant-numeric: tabular-nums; color: var(--text); }
+#apps-grid { position: absolute; top: 200px; left: 60px; right: 60px; display: flex; flex-wrap: wrap; align-content: flex-start; }
+.app-tile {
+  position: relative; width: 340px; height: 200px; margin: 0 24px 24px 0; padding: 26px 28px; overflow: hidden; text-align: left;
+  display: flex; align-items: flex-end; border-radius: var(--r-tile); color: #FFFFFF;
+  box-shadow: inset 0 var(--ol-w) 0 0 rgba(255, 255, 255, 0.38), inset 0 0 0 var(--ol-w) rgba(255, 255, 255, 0.2), 0 18px 40px rgba(0, 0, 0, 0.28);
+  transition: transform 0.36s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.28s ease;
+}
+.app-tile:nth-child(5n) { margin-right: 0; }
+.app-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%); }
+.app-tile:focus { transform: scale(1.07); z-index: 2; box-shadow: inset 0 var(--ol-w) 0 0 rgba(255, 255, 255, 0.5), 0 0 0 5px var(--focus-ring), 0 0 56px var(--tint-b), 0 44px 90px rgba(0, 0, 0, 0.42); }
+.app-name { position: relative; font-size: 38px; line-height: 48px; font-weight: 700; letter-spacing: -0.5px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+.app-logo { display: none; position: absolute; top: 24px; left: 28px; right: 28px; bottom: 24px; background: center / contain no-repeat; }
+.app-tile.has-logo .app-logo { display: block; }
+.app-tile.has-logo .app-name { visibility: hidden; }
+.apps-empty { position: relative; width: 100%; font-size: 30px; color: var(--text); }
+#apps-foot { position: absolute; bottom: 28px; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 600; color: var(--text); }
+#apps-toast { position: absolute; bottom: 84px; left: 50%; max-width: 1400px; padding: 18px 32px; border-radius: 30px; background: rgba(20, 20, 22, 0.94); color: #FFFFFF; font-size: 26px; line-height: 34px; text-align: center; transform: translateX(-50%); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+#apps-toast.on { opacity: 1; }
+
+
+/* ======================= Event cards (Up Next) ======================= */
+.event { position: relative; align-items: center; margin: 0 0 8px; padding: 0 14px 0 20px; min-height: 76px; border-radius: var(--r-cell); background: var(--ev-bg); }
+.ev-bar { position: absolute; left: 7px; top: 12px; bottom: 12px; width: 6px; border-radius: 3px; background: var(--ev-c, var(--accent)); box-shadow: 0 0 12px var(--ev-c, transparent); }
+.event .tl-time { width: 88px; padding: 10px 0; margin-right: 18px; }
+.event .tl-start { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+.event .event-body { padding: 10px 0; }
+.ev-head { display: flex; align-items: center; min-width: 0; }
+.ev-head .event-title { flex: 1; min-width: 0; }
+.ev-dur { flex-shrink: 0; margin-left: 12px; padding: 0 12px; border-radius: 13px; background: var(--ev-chip); font-size: 18px; line-height: 26px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.event.now { background: var(--ev-bg-now); box-shadow: inset 0 0 0 2px var(--ev-c, var(--accent)); }
+.ev-ring { position: relative; flex-shrink: 0; width: 54px; height: 54px; margin-left: 12px; }
+.ev-ring svg { width: 100%; height: 100%; display: block; }
+.ev-ring-track { stroke: var(--sep); }
+.ev-ring-fill { stroke: var(--accent2); }
+.ev-ring-t { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+.ev-ring-t small { font-size: 14px; font-weight: 600; margin-left: 1px; }
+/* all-day events: a slim banner */
+.event.allday { min-height: 52px; }
+.event.allday .tl-time { padding: 0; }
+.event.allday .tl-start { font-size: 18px; font-weight: 600; color: var(--text-2); }
+.event.allday .event-body { padding: 0; }
+.event.allday .event-title { font-size: 24px; line-height: 30px; }
+.event.allday .event-meta { display: none; }
+.detail-cal .event { min-height: 92px; margin-bottom: 10px; }
+.detail-cal .event .tl-time { width: 124px; }
+.detail-cal .event .tl-start { font-size: 30px; }
+.detail-cal .ev-ring { width: 64px; height: 64px; }
+.detail-cal .event.allday { min-height: 62px; }
+body.h12 .event .tl-time { width: 112px; }
+body.h12 .detail-cal .event .tl-time { width: 150px; }
+
+
+/* ======================= Depth ======================= */
+/* The background is a little larger than the screen, so drifting it never shows an edge. */
+#background { transform: translate3d(calc(var(--dx, 0) * -18px), calc(var(--dy, 0) * -10px), 0) scale(1.05); transition: transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform; }
+#bg-wx { transform: translate3d(calc(var(--dx, 0) * -14px), calc(var(--dy, 0) * -8px), 0); transition: transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+body[data-anim="reduced"] #background, body[data-anim="off"] #background, body.no-motion #background { transform: none; transition: none; }
+body[data-anim="reduced"] #bg-wx, body[data-anim="off"] #bg-wx, body.no-motion #bg-wx { transform: none; transition: none; }
+
+/* ======================= Apps page: richer tiles ======================= */
+.app-tile:focus { transform: perspective(900px) rotateY(calc(var(--tilt-x, 0) * 5deg)) rotateX(calc(var(--tilt-y, 0) * -5deg)) scale(1.07); }
+.app-tile::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 38%; opacity: 0; pointer-events: none; background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0)); transform: translateX(-130%) skewX(-20deg); }
+.app-tile:focus::after { animation: shine 0.95s ease-out 0.08s 1 forwards; }
+@keyframes shine { 0% { opacity: 1; transform: translateX(-130%) skewX(-20deg); } 100% { opacity: 0; transform: translateX(420%) skewX(-20deg); } }
+.app-emblem { position: absolute; top: 22px; left: 24px; width: 78px; height: 78px; border-radius: 26px; display: flex; align-items: center; justify-content: center; font-size: 36px; line-height: 1; font-weight: 800; letter-spacing: -1px; background: rgba(255, 255, 255, 0.18); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 16px rgba(0, 0, 0, 0.18); }
+.app-tile.has-logo .app-emblem { display: none; }
+#apps-wash { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: -1; pointer-events: none; }
+#apps-wash i { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; transition: opacity 0.9s ease; background: radial-gradient(ellipse 80% 70% at 50% 40%, var(--wc, transparent) 0%, rgba(0, 0, 0, 0) 72%); }
+#apps-wash i.on { opacity: 0.4; }
+#apps-wx { display: flex; align-items: center; margin-right: 40px; font-size: 30px; font-weight: 500; color: var(--text); }
+#apps-wx .wx-i { width: 46px; height: 46px; margin-right: 12px; }
+.ev-ring-t { font-size: 19px; } .ev-ring-t small { font-size: 12px; }
+
+
+/* ======================= Commute map ======================= */
+.cm-map { display: none; }
+.has-map .cm-map { display: block; position: absolute; right: 20px; bottom: 20px; width: 150px; height: 112px; border-radius: 18px; background: center / cover no-repeat; box-shadow: inset 0 0 0 1px var(--sep), 0 6px 16px rgba(0, 0, 0, 0.22); }
+.rows-2 .has-map .commute-time, .rows-2 .has-map .commute-sub { max-width: 190px; }
+.rows-1 .w-narrow.has-map .cm-map { position: relative; right: auto; bottom: auto; width: 100%; height: 120px; margin: 4px 0 10px; }
+.rows-1 .w-narrow.has-map .commute-time { font-size: 64px; }
+.rows-1 .w-narrow.has-map .commute-sub + .commute-sub, .rows-1 .w-narrow.has-map .commute-updated { display: none; }
+body[data-clock-size="l"] .rows-1 .w-narrow.has-map .cm-map { height: 80px; margin: 0 0 8px; }
+body[data-clock-size="l"] .rows-1 .w-narrow.has-map .commute-time { font-size: 56px; }
+.rows-1 .w-wide.has-map .cm-map { top: 24px; bottom: 24px; right: 24px; width: 40%; height: auto; border-radius: 24px; }
+.rows-1 .w-wide.has-map .commute-time, .rows-1 .w-wide.has-map .commute-sub, .rows-1 .w-wide.has-map .commute-updated { max-width: calc(60% - 30px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rows-1 .w-wide.has-map .commute-time { overflow: visible; }
+.dc-map { height: 200px; margin: 6px 0 4px; border-radius: 28px; background: center / cover no-repeat; box-shadow: inset 0 0 0 1px var(--sep); }
+.detail-commute .dc-time { font-size: 130px; margin: 14px 0; }
+
+
+/* ======================= Rain radar ======================= */
+.rd-time { position: absolute; top: 34px; right: 32px; font-size: 22px; line-height: 28px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.rd-map { position: absolute; left: 20px; right: 20px; bottom: 20px; top: 76px; border-radius: 22px; overflow: hidden; background: #10131c; box-shadow: inset 0 0 0 1px var(--sep); }
+body.mode-light .rd-map { background: #e4e7ee; }
+.rd-canvas { position: absolute; left: 50%; top: 50%; }
+.rd-base, .rd-plain, .rd-frame { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.rd-base { background-size: 100% 100%; }
+.rd-plain { background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 58px, rgba(255, 255, 255, 0.12) 60px, rgba(0, 0, 0, 0) 62px, rgba(0, 0, 0, 0) 138px, rgba(255, 255, 255, 0.12) 140px, rgba(0, 0, 0, 0) 142px, rgba(0, 0, 0, 0) 218px, rgba(255, 255, 255, 0.12) 220px, rgba(0, 0, 0, 0) 222px), #141824; }
+body.mode-light .rd-plain { background-color: #dfe3ec; }
+.rd-frame { opacity: 0; transition: opacity 0.45s ease; }
+.rd-frame.on { opacity: 0.84; }
+.rd-frame img { position: absolute; width: 256px; height: 256px; }
+.rd-pin { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.55), 0 0 0 10px rgba(255, 255, 255, 0.22); }
+.rd-credit, .rd-note { position: absolute; padding: 2px 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.66); color: #FFFFFF; font-size: 16px; line-height: 22px; }
+.rd-credit { left: 12px; bottom: 10px; }
+.rd-note { left: 12px; top: 10px; }
+.rd-dots { position: absolute; right: 14px; bottom: 16px; display: flex; }
+.rd-dots i { width: 9px; height: 9px; margin-left: 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.rd-dots i.on { background: #FFFFFF; }
+.rd-map.big { position: relative; top: auto; left: auto; right: auto; bottom: auto; height: 500px; margin: 14px 0 6px; }
+#sheet-detail .rd-time { position: static; display: block; font-size: 34px; line-height: 42px; margin-top: 4px; }
+.rd-controls { margin-top: 16px; }
+body[data-anim="off"] .rd-frame, body[data-anim="reduced"] .rd-frame { transition: none; }
+
+
+/* Soft shading behind the Apps title, weather, clock and footer (same idea and strength as behind the Home clock),
+   so they stay readable on the brightest themes: worst case 6.1:1 in Dark mode (3.4:1 without it). */
+#apps-head::before, #apps-foot::before { content: ""; position: absolute; z-index: -1; pointer-events: none; left: -60px; right: -60px; background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--clock-vignette) 35%, var(--clock-vignette) 65%, rgba(0, 0, 0, 0)); }
+#apps-head::before { top: -60px; bottom: -60px; }
+#apps-foot::before { top: -40px; bottom: -34px; }

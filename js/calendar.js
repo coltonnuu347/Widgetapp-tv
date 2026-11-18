@@ -123,6 +123,13 @@
       }).join('') + '</div>';
   }
 
+  // A thin progress ring (how much of the event has passed) with the time left written inside
+  var RING_R = 17, RING_C = 2 * Math.PI * RING_R;
+  function ringSvg(frac) {
+    return '<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="' + RING_R + '" fill="none" stroke-width="4.5" class="ev-ring-track"/>' +
+      '<circle cx="22" cy="22" r="' + RING_R + '" fill="none" stroke-width="4.5" stroke-linecap="round" class="ev-ring-fill" stroke-dasharray="' + (RING_C * frac).toFixed(1) + ' ' + RING_C.toFixed(1) + '" transform="rotate(-90 22 22)"/></svg>';
+  }
+
   // HTML for the next `days` days of events (used by the card and the full-screen view).
   function buildList(days) {
     var now = new Date();
@@ -147,14 +154,18 @@
         var place = o.location ? TV.esc(o.location.split('\n')[0]) : '';
         var isNext = o === upNext && i === 0 && o.start - now < 6 * 3600000;
         var countdown = isNext ? '<span class="countdown' + (o.start - now <= 10 * 60000 ? ' soon' : '') + '">' + TV.esc(TV.smart.inText(o.start - now)) + '</span>' : '';
-        html += '<div class="event' + (isNow ? ' now' : '') + '">' +
+        var length = !o.allDay && o.end > o.start ? TV.smart.lengthText(o.end - o.start) : '';
+        var left = isNow ? Math.max(1, Math.ceil((o.end - now) / 60000)) : 0;
+        var frac = isNow ? TV.smart.progress(o.start, o.end, now) : 0;
+        html += '<div class="event' + (isNow ? ' now' : '') + (o.allDay ? ' allday' : '') + '" style="--ev-c:' + TV.esc(o.color) + '">' +
+          '<span class="ev-bar"></span>' +
           '<div class="tl-time"><div class="tl-start">' + t[0] + '</div><div class="tl-end">' + t[1] + '</div></div>' +
-          '<div class="tl-rail"><span class="tl-dot" style="background:' + TV.esc(o.color) + '"></span></div>' +
           '<div class="event-body">' +
-            '<div class="event-title">' + TV.esc(o.title) + '</div>' +
+            '<div class="ev-head"><div class="event-title">' + TV.esc(o.title) + '</div>' + (length && !isNow ? '<span class="ev-dur">' + TV.esc(length) + '</span>' : '') + '</div>' +
             ((isNow || place || isNext) ? '<div class="event-meta">' + (isNow ? '<span class="now-tag">Now</span>' : '') + countdown + (countdown && place ? ' · ' : '') + place + '</div>' : '') +
-            (isNow ? '<div class="ev-progress"><span style="width:' + (TV.smart.progress(o.start, o.end, now) * 100).toFixed(1) + '%"></span></div>' : '') +
-          '</div></div>';
+          '</div>' +
+          (isNow ? '<div class="ev-ring" data-p="' + (frac * 100).toFixed(1) + '">' + ringSvg(frac) + '<span class="ev-ring-t">' + (left < 60 ? left + '<small>m</small>' : Math.floor(left / 60) + '<small>h</small>') + '</span></div>' : '') +
+        '</div>';
         total++;
       });
       html += '</div>';

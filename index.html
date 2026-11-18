@@ -7,6 +7,18 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="mode-dark">
+  <!-- Shared gradients for the weather illustrations (js/icons.js). Kept on the page (not display:none, which breaks gradients). -->
+  <svg id="wx-defs" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <radialGradient id="wxSun"><stop offset="0" stop-color="#FFF7B8"/><stop offset="0.55" stop-color="#FFD43B"/><stop offset="1" stop-color="#FF9F0A"/></radialGradient>
+    <radialGradient id="wxSunGlow"><stop offset="0" stop-color="#FFD60A" stop-opacity="0.5"/><stop offset="1" stop-color="#FFD60A" stop-opacity="0"/></radialGradient>
+    <linearGradient id="wxMoon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--wx-moon-hi)"/><stop offset="1" style="stop-color:var(--wx-moon-lo)"/></linearGradient>
+    <radialGradient id="wxMoonGlow"><stop offset="0" style="stop-color:var(--wx-moon-hi);stop-opacity:var(--wx-glow-a)"/><stop offset="1" style="stop-color:var(--wx-moon-hi);stop-opacity:0"/></radialGradient>
+    <linearGradient id="wxCloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--wx-cloud-hi)"/><stop offset="1" style="stop-color:var(--wx-cloud-lo)"/></linearGradient>
+    <linearGradient id="wxCloudDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--wx-cloud-dark-hi)"/><stop offset="1" style="stop-color:var(--wx-cloud-dark-lo)"/></linearGradient>
+    <linearGradient id="wxFog" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--wx-cloud-dark-lo);stop-opacity:0.35"/><stop offset="0.5" style="stop-color:var(--wx-cloud-dark-hi)"/><stop offset="1" style="stop-color:var(--wx-cloud-dark-lo);stop-opacity:0.35"/></linearGradient>
+    <linearGradient id="wxDrop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--wx-rain-hi)"/><stop offset="1" style="stop-color:var(--wx-rain-lo)"/></linearGradient>
+    <linearGradient id="wxBolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3A0"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient>
+  </defs></svg>
   <div id="background">
     <div id="bg-gradient">
       <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
@@ -23,8 +35,9 @@
   </div>
 
   <div id="stage">
+    <div id="pager" data-page="home">
+    <div id="focus-glow"></div>
     <div id="app">
-      <div id="focus-glow"></div>
       <header id="hero">
         <div id="clock-block">
           <div id="date"><span id="greeting"></span><span id="date-text"></span></div>
@@ -64,6 +77,16 @@
           </section>
         </div>
       </main>
+      <div id="home-hint">▼ Apps</div>
+    </div>
+
+    <section id="apps" aria-label="Apps">
+      <div id="apps-wash"><i></i><i></i></div>
+      <div id="apps-head"><div id="apps-title">Apps</div><div id="apps-wx"></div><div id="apps-clock"></div></div>
+      <div id="apps-grid"></div>
+      <div id="apps-foot">▲ Back to Home</div>
+      <div id="apps-toast"></div>
+    </section>
     </div>
 
     <div id="ambient" aria-hidden="true">
@@ -94,13 +117,17 @@
   <script src="js/weather.js"></script>
   <script src="js/smart.js"></script>
   <script src="js/palette.js"></script>
+  <script src="js/mapurl.js"></script>
+  <script src="js/radarmath.js"></script>
   <script src="js/calendar.js"></script>
+  <script src="js/art.js"></script>
   <script src="js/themes.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/glance.js"></script>
   <script src="js/weatherfx.js"></script>
   <script src="js/ambient.js"></script>
   <script src="js/focusglow.js"></script>
+  <script src="js/depth.js"></script>
   <script src="js/pack.js"></script>
   <script src="js/widgets/registry.js"></script>
   <script src="js/widgets/sun-moon.js"></script>
@@ -110,8 +137,12 @@
   <script src="js/widgets/commute.js"></script>
   <script src="js/widgets/nasa.js"></script>
   <script src="js/widgets/air.js"></script>
+  <script src="js/widgets/radar.js"></script>
   <script src="js/widgets/countdown.js"></script>
   <script src="js/widgets/spotify.js"></script>
+  <script src="js/appmatch.js"></script>
+  <script src="js/pager.js"></script>
+  <script src="js/apps.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/app.js"></script>

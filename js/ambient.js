@@ -40,6 +40,7 @@
   function enter() {
     if (on) return;
     on = true;
+    if (TV.pager) TV.pager.go('home');   // wake up on Home, not on the Apps page
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     lastText = '';
     update();
@@ -48,6 +49,7 @@
     driftTimer = setInterval(drift, 90 * 1000);
     document.body.classList.add('ambient');
     TV.$('#ambient').setAttribute('aria-hidden', 'false');
+    TV.emit('ambient', true);
     if ((TV_CONFIG.wallpapers || []).length && TV.setAmbientSlides) TV.setAmbientSlides(true);
   }
 
@@ -57,6 +59,7 @@
     clearInterval(driftTimer);
     document.body.classList.remove('ambient');
     TV.$('#ambient').setAttribute('aria-hidden', 'true');
+    TV.emit('ambient', false);
     bump();
     if (TV.setAmbientSlides) TV.setAmbientSlides(false);
   }

@@ -25,6 +25,9 @@
     });
   }
 
+  // Used by the Theme screen when you pick NASA before a photo has loaded
+  TV.nasaRetry = function () { load(); };
+
   function set(p) {
     photo = p;
     TV.nasaPhoto = { url: p.url, title: p.title };

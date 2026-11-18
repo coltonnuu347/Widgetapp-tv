@@ -12,7 +12,7 @@
   }
 
   function place(target) {
-    var g = TV.$('#focus-glow'), app = TV.$('#app');
+    var g = TV.$('#focus-glow'), app = TV.$('#pager');
     if (!g) return;
     if (!target || overlayOpen() || document.body.classList.contains('ambient') || !app.contains(target)) { g.style.opacity = '0'; return; }
     var pos = offsetIn(target, app);

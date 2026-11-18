@@ -6,6 +6,9 @@ window.TV_CONFIG = {
   // How many days ahead the "Up Next" list looks.
   calendarDays: 7,
 
+  // Mapbox token for the maps (Commute route and Rain Radar). The Commute widget's own mapboxToken below also works.
+  mapboxToken: '',
+
   // Optional CORS proxy for the calendar (see proxy/README.md). Example: 'https://cal-proxy.yourname.workers.dev/?url='
   corsProxy: '',
 
@@ -42,6 +45,10 @@ window.TV_CONFIG = {
   // Countdowns to look forward to: [{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }]
   // ('MM-DD' repeats every year). You can also make a calendar event titled "Countdown: Beach trip".
   countdowns: [],
+
+  // Extra streaming apps for the Apps page (or to fix one): [{ name: 'Crunchyroll', id: 'the app ID', color: '#f47521' }].
+  // Find IDs with Settings > Apps > Find Apps on This TV (on the TV).
+  apps: [],
 
   // Widgets that start turned off (you can turn them back on in Settings on the TV).
   // Names: 'sunmoon', 'wifi', 'dates', 'commute', 'nasa', 'air', 'countdown', 'spotify', 'alerts'

@@ -84,12 +84,29 @@
     return html;
   }
 
+  // Streaming apps on the Apps page: turn each on or off, put them in your order, and find out what the TV has.
+  function appsSection() {
+    var list = TV.apps.all();
+    var html = '<div class="section-label">Apps</div><div class="list">';
+    list.forEach(function (a, i) {
+      html += '<div class="row"><span class="row-text">' + TV.esc(a.name) + (a.installed === false ? ' (not on this TV)' : '') + '</span>' +
+        '<button class="btn toggle' + (a.enabled ? ' on' : '') + '" data-focus data-action="app-toggle" data-value="' + TV.esc(a.key) + '">' + (a.enabled ? 'On' : 'Off') + '</button>' +
+        '<button class="btn icon-btn" data-focus data-action="app-up" data-value="' + TV.esc(a.key) + '"' + (i === 0 ? ' disabled' : '') + '>' + TV.icon('up') + '</button>' +
+        '<button class="btn icon-btn" data-focus data-action="app-down" data-value="' + TV.esc(a.key) + '"' + (i === list.length - 1 ? ' disabled' : '') + '>' + TV.icon('down') + '</button></div>';
+    });
+    html += '</div><div class="row"><span class="row-text">' + (TV.apps.found().length ? TV.apps.found().length + ' apps found on this TV' : 'Not checked yet') + '</span>' +
+      '<button class="btn" data-focus data-action="apps-find">Find Apps on This TV</button>' +
+      (TV.apps.found().length ? '<button class="btn" data-focus data-action="apps-list">Show List</button>' : '') + '</div>' +
+      '<div class="hint">Press Down past the widgets on the home screen to open the Apps page. The TV tells the app which apps are installed and what their IDs are. If a tile will not open its app, use Find Apps, then Show List, and add the app’s ID in config.local.js (c.apps).</div>';
+    return html;
+  }
+
   TV.renderSettingsSheet = function () {
     var focusedAction = document.activeElement && document.activeElement.getAttribute
       ? [document.activeElement.getAttribute('data-action'), document.activeElement.getAttribute('data-value')] : null;
     TV.$('#sheet-settings').innerHTML = '<h2>Settings</h2>' +
       (message ? '<div class="message">' + TV.esc(message) + '</div>' : '') +
-      prefsSections() + widgetsSection() + calendarsSection() + locationSection() +
+      prefsSections() + widgetsSection() + appsSection() + calendarsSection() + locationSection() +
       '<div class="hint footer-hint">Remote: arrows to move · OK to select · Back to close · Yellow = Theme · Blue = Settings</div>';
     // Keep focus on the same control after redrawing.
     if (focusedAction && focusedAction[0]) {
@@ -171,6 +188,28 @@
         var w = TV.widgets.all().filter(function (x) { return x.id === value; })[0];
         TV.widgets.setEnabled(value, !TV.widgets.isEnabled(w));
         TV.renderSettingsSheet();
+        return true;
+      case 'app-toggle':
+        var off = s.apps.disabled.indexOf(value) >= 0;
+        s.apps.disabled = s.apps.disabled.filter(function (k) { return k !== value; });
+        if (!off) s.apps.disabled.push(value);
+        TV.saveSettings(); TV.apps.render(); TV.renderSettingsSheet();
+        return true;
+      case 'app-up': case 'app-down':
+        var keys = TV.apps.all().map(function (a) { return a.key; }), at = keys.indexOf(value), to = at + (action === 'app-up' ? -1 : 1);
+        if (at >= 0 && to >= 0 && to < keys.length) { keys.splice(at, 1); keys.splice(to, 0, value); s.apps.order = keys; }
+        TV.saveSettings(); TV.apps.render(); TV.renderSettingsSheet();
+        return true;
+      case 'apps-find':
+        say('Asking the TV what is installed…');
+        TV.apps.discover(function (n, err) {
+          if (!n) { say(err || 'The TV did not list any apps.'); return; }
+          var matched = Object.keys(TV.appmatch.matchInstalled(TV.apps.found())).length;
+          say('Found ' + n + ' apps on this TV. ' + matched + ' of them are in your list.');
+        });
+        return true;
+      case 'apps-list':
+        TV.openDetail('appsfound');
         return true;
       case 'w-up': TV.widgets.move(value, -1); TV.renderSettingsSheet(); return true;
       case 'w-down': TV.widgets.move(value, 1); TV.renderSettingsSheet(); return true;

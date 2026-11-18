@@ -51,6 +51,12 @@
     [/ipapi\.co/, { city: 'Denver', region_code: 'CO', country_code: 'US', latitude: 39.7392, longitude: -104.9903 }],
     [/air-quality-api\.open-meteo\.com/, { current: { us_aqi: 42, pm2_5: 9.6, uv_index: 6.4 } }],
     [/api\.open-meteo\.com/, weather],
+    [/api\.rainviewer\.com/, (function () {
+      var step = 600, last = Math.floor(nowSec / step) * step, past = [], nowcast = [], k;
+      for (k = 12; k >= 0; k--) past.push({ time: last - k * step, path: '/v2/radar/' + (last - k * step) });
+      for (k = 1; k <= 3; k++) nowcast.push({ time: last + k * step, path: '/v2/radar/nowcast_' + k });
+      return { version: '2.0', generated: nowSec, host: 'https://tilecache.rainviewer.com', radar: { past: past, nowcast: nowcast } };
+    })()],
     [/api\.weather\.gov/, { features: [{ properties: { event: 'Wind Advisory (sample)', severity: 'Moderate', headline: 'Sample alert for preview mode', description: 'This is sample text. On your TV this shows the full alert from the National Weather Service.', instruction: 'Sample instructions appear here.', senderName: 'NWS (sample)', ends: new Date(now.getTime() + 6 * 3600000).toISOString() } }] }],
     [/date\.nager\.at/, (function () {
       var t = TV.addDays(today, 9), y = TV.addDays(today, 30);
@@ -106,11 +112,51 @@
   TV_CONFIG.commute = { mapboxToken: 'demo', from: '39.7392,-104.9903', to: '39.6,-104.9', label: 'Work', showFrom: '00:00', showUntil: '23:59' };
   TV_CONFIG.spotify = { clientId: 'demo', refreshToken: 'demo' };
   TV_CONFIG.countdowns = [{ name: 'Beach trip', date: (function (d) { return d.getFullYear() + '-' + TV.pad(d.getMonth() + 1) + '-' + TV.pad(d.getDate()); })(TV.addDays(today, 23)) }];
-  TV_CONFIG.wallpapers = ['demo-dunes.svg', 'demo-lake.svg', 'demo-forest.svg'];
   TV.settings.manualLocation = null;
   TV.settings.widgets.disabled = []; // the general preview shows every widget
   TV.saveSettings = function () { /* preview: don't save */ };
   try { window.localStorage.clear(); } catch (e) { /* ignore */ }
+
+  // A drawn stand-in for the commute map (preview only): streets, water, a park and the route with two pins.
+  TV.demoRouteMap = function (dark, w, h) {
+    var bg = dark ? '#1b1f2a' : '#ebe8e1', road = dark ? '#303749' : '#ffffff', minor = dark ? '#262b39' : '#f7f5f0', water = dark ? '#173650' : '#bcd9ee', park = dark ? '#1d3b2f' : '#cfe5c4';
+    var sw = Math.max(4, Math.round(w * 0.016)), x = function (f) { return Math.round(w * f); }, y = function (f) { return Math.round(h * f); };
+    var r = Math.max(8, Math.round(Math.min(w, h) * 0.07));
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" preserveAspectRatio="xMidYMid slice">' +
+      '<rect width="' + w + '" height="' + h + '" fill="' + bg + '"/>' +
+      '<path d="M0 ' + y(0.86) + 'C' + x(0.25) + ' ' + y(0.74) + ' ' + x(0.5) + ' ' + y(1) + ' ' + x(1) + ' ' + y(0.82) + 'V' + h + 'H0Z" fill="' + water + '"/>' +
+      '<rect x="' + x(0.66) + '" y="' + y(0.5) + '" width="' + x(0.26) + '" height="' + y(0.2) + '" rx="' + r + '" fill="' + park + '"/>' +
+      '<g stroke="' + minor + '" stroke-width="' + Math.max(2, Math.round(sw * 0.45)) + '">' +
+        [0.12, 0.28, 0.46, 0.6, 0.78, 0.9].map(function (f) { return '<line x1="' + x(f) + '" y1="0" x2="' + x(f) + '" y2="' + h + '"/>'; }).join('') +
+        [0.15, 0.32, 0.55, 0.7].map(function (f) { return '<line x1="0" y1="' + y(f) + '" x2="' + w + '" y2="' + y(f) + '"/>'; }).join('') + '</g>' +
+      '<g stroke="' + road + '" stroke-width="' + Math.max(3, Math.round(sw * 0.8)) + '"><line x1="' + x(0.35) + '" y1="0" x2="' + x(0.35) + '" y2="' + h + '"/><line x1="0" y1="' + y(0.45) + '" x2="' + w + '" y2="' + y(0.45) + '"/><line x1="' + x(0.62) + '" y1="0" x2="' + x(0.62) + '" y2="' + h + '"/></g>' +
+      '<polyline points="' + x(0.16) + ',' + y(0.72) + ' ' + x(0.35) + ',' + y(0.72) + ' ' + x(0.35) + ',' + y(0.45) + ' ' + x(0.62) + ',' + y(0.45) + ' ' + x(0.62) + ',' + y(0.26) + ' ' + x(0.84) + ',' + y(0.26) + '" fill="none" stroke="#ff9f0a" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>' +
+      '<g stroke="#000" stroke-opacity="0.5" stroke-width="2" fill="#fff"><circle cx="' + x(0.16) + '" cy="' + y(0.72) + '" r="' + r + '"/><circle cx="' + x(0.84) + '" cy="' + y(0.26) + '" r="' + r + '"/></g>' +
+      '<g font-family="sans-serif" font-weight="700" font-size="' + Math.round(r * 1.2) + '" text-anchor="middle" fill="#111"><text x="' + x(0.16) + '" y="' + (y(0.72) + Math.round(r * 0.42)) + '">A</text><text x="' + x(0.84) + '" y="' + (y(0.26) + Math.round(r * 0.42)) + '">B</text></g></svg>';
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  };
+
+  // Preview-only radar: soft storm cells drawn in map space, so neighbouring tiles join up and the cells drift east frame by frame.
+  TV.demoRadarTile = function (frame, tx, ty, z) {
+    var here = TV.location && TV.location.lat != null ? TV.location : { lat: 39.7392, lon: -104.9903 };   // the sample storms sit around wherever you are
+    var cx0 = TV.radarmath.tileX(here.lon, z), cy0 = TV.radarmath.tileY(here.lat, z);
+    var cells = [[-2.4 + frame * 0.28, -0.5, 0.62], [-1.5 + frame * 0.28, 0.5, 0.42], [0.9 + frame * 0.2, -1.0, 0.4], [1.8 + frame * 0.2, 0.9, 0.5], [-0.2 + frame * 0.24, 0.1, 0.22]];
+    var defs = '<radialGradient id="g"><stop offset="0" stop-color="#ff3b30" stop-opacity="0.9"/><stop offset="0.3" stop-color="#ff9f0a" stop-opacity="0.85"/><stop offset="0.55" stop-color="#ffd60a" stop-opacity="0.7"/><stop offset="0.78" stop-color="#30d158" stop-opacity="0.6"/><stop offset="1" stop-color="#30d158" stop-opacity="0"/></radialGradient>';
+    var body = cells.map(function (c) {
+      var px = (cx0 + c[0] - tx) * 256, py = (cy0 + c[1] - ty) * 256, r = c[2] * 256;
+      return (px + r < 0 || px - r > 256 || py + r < 0 || py - r > 256) ? '' : '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="url(#g)"/>';
+    }).join('');
+    return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs>' + defs + '</defs>' + body + '</svg>');
+  };
+  // A drawn stand-in for the base map: land with a coastline and a few roads.
+  TV.demoBaseMap = function (dark, w, h) {
+    var land = dark ? '#1d2230' : '#e9e6df', sea = dark ? '#142f48' : '#b9d7ec', line = dark ? '#2b3347' : '#fbfaf7', town = dark ? '#2a3146' : '#dcd8cf';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '"><rect width="' + w + '" height="' + h + '" fill="' + land + '"/>' +
+      '<path d="M' + Math.round(w * 0.72) + ' 0C' + Math.round(w * 0.62) + ' ' + Math.round(h * 0.3) + ' ' + Math.round(w * 0.8) + ' ' + Math.round(h * 0.55) + ' ' + Math.round(w * 0.7) + ' ' + h + 'H' + w + 'V0Z" fill="' + sea + '"/>' +
+      '<g fill="' + town + '"><circle cx="' + Math.round(w * 0.5) + '" cy="' + Math.round(h * 0.5) + '" r="' + Math.round(h * 0.09) + '"/><circle cx="' + Math.round(w * 0.22) + '" cy="' + Math.round(h * 0.3) + '" r="' + Math.round(h * 0.05) + '"/><circle cx="' + Math.round(w * 0.35) + '" cy="' + Math.round(h * 0.8) + '" r="' + Math.round(h * 0.06) + '"/></g>' +
+      '<g stroke="' + line + '" stroke-width="3" fill="none"><path d="M0 ' + Math.round(h * 0.62) + 'L' + w + ' ' + Math.round(h * 0.4) + '"/><path d="M' + Math.round(w * 0.3) + ' 0L' + Math.round(w * 0.46) + ' ' + h + '"/><path d="M0 ' + Math.round(h * 0.2) + 'L' + Math.round(w * 0.6) + ' ' + Math.round(h * 0.28) + '"/></g></svg>';
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  };
 
   TV.demo = {
     start: function () {

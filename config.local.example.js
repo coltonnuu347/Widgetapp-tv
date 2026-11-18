@@ -15,6 +15,10 @@
   // Birthdays that are not in your calendar (date is 'MM-DD').
   // c.birthdays = [{ name: 'Mom', date: '05-14' }];
 
+  // Mapbox token for the maps: the Commute route map and the Rain Radar's base map (free: https://account.mapbox.com).
+  // The commute token below works for both, so you only need this line if you do not use Commute.
+  // c.mapboxToken = 'pk.YOUR_TOKEN';
+
   // Commute widget (free Mapbox token: https://account.mapbox.com).
   // c.commute.mapboxToken = 'pk.YOUR_TOKEN';
   // c.commute.from = 'Home address';
@@ -25,6 +29,9 @@
 
   // Countdowns (or make a calendar event titled "Countdown: Beach trip" from your phone).
   // c.countdowns = [{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }];
+
+  // Extra streaming apps for the Apps page, or to fix one (find IDs on the TV: Settings > Apps > Find Apps on This TV).
+  // c.apps = [{ name: 'Crunchyroll', id: 'THE.APP.ID', color: '#f47521' }];
 
   // Your own wallpaper photos (put the files in images/wallpapers/). With two or more you get a Slideshow
   // on the theme screen, and Ambient Mode shows them as a photo frame.

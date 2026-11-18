@@ -112,6 +112,12 @@ window.TV = window.TV || {};
     el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
   };
 
+  // True when decorative motion is allowed (Animations Full, and Moving Background on)
+  TV.motionOn = function () {
+    var p = TV.settings && TV.settings.prefs;
+    return !p || (p.anim === 'full' && p.motion !== false);
+  };
+
   // Full-screen views opened with OK on a card: id -> { render(el), action(name, value) }
   TV.details = {};
 

@@ -8,20 +8,71 @@
     return '<svg viewBox="0 0 24 24">' + body + '</svg>';
   }
 
-  var SUN_C = '#FFD60A', CLOUD_C = 'var(--wx-cloud)', CLOUD_DARK = 'var(--wx-cloud-dark)', RAIN_C = 'var(--wx-rain)', BOLT_C = '#FFD60A', MOON_C = 'var(--wx-moon)', SNOW_C = 'var(--wx-snow)';
+  // ---- Weather illustrations ----
+  // Soft shaded drawings (like Apple Weather). They share gradients defined once in index.html (#wx-defs) and take
+  // their light/dark colors from the --wx-* variables, so they work in both modes. `animated` adds slow SVG motion
+  // (rays turning, clouds bobbing) for the big icon only; the small ones stay still.
+  function grad(n) { return 'url(#' + n + ')'; }
+  function spin(on, dur) { return on ? '<animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="' + dur + 's" repeatCount="indefinite"/>' : ''; }
+  function bob(on, dy, dur) { return on ? '<animateTransform attributeName="transform" type="translate" values="0 0;0 ' + dy + ';0 0" dur="' + dur + 's" repeatCount="indefinite" additive="sum"/>' : ''; }
 
   var sunRays = '';
   for (var i = 0; i < 8; i++) {
     var a = i * Math.PI / 4;
-    sunRays += '<line x1="' + (12 + Math.cos(a) * 7.2).toFixed(2) + '" y1="' + (12 + Math.sin(a) * 7.2).toFixed(2) +
-      '" x2="' + (12 + Math.cos(a) * 9.6).toFixed(2) + '" y2="' + (12 + Math.sin(a) * 9.6).toFixed(2) + '"/>';
+    sunRays += '<line x1="' + (12 + Math.cos(a) * 7.5).toFixed(2) + '" y1="' + (12 + Math.sin(a) * 7.5).toFixed(2) +
+      '" x2="' + (12 + Math.cos(a) * 10).toFixed(2) + '" y2="' + (12 + Math.sin(a) * 10).toFixed(2) + '"/>';
   }
-
   var cloudPath = 'M7 19h10.5a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.6 10.1 4.5 4.5 0 0 0 7 19z';
-  var smallSun = '<g transform="translate(-3.5 -4) scale(0.62)"><circle cx="12" cy="12" r="4.6" fill="' + SUN_C + '"/><g stroke="' + SUN_C + '" stroke-width="2.2" stroke-linecap="round">' + sunRays + '</g></g>';
-  var smallMoon = '<g transform="translate(-2.5 -3.5) scale(0.6)"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" style="fill:' + MOON_C + '"/></g>';
-  var cloudUp = '<g transform="translate(0 -2.5)"><path d="' + cloudPath + '" style="fill:' + CLOUD_C + '"/></g>';
-  var cloudUpDark = '<g transform="translate(0 -2.5)"><path d="' + cloudPath + '" style="fill:' + CLOUD_DARK + '"/></g>';
+
+  function sunArt(animated) {
+    return '<circle cx="12" cy="12" r="11.5" fill="' + grad('wxSunGlow') + '"/>' +
+      '<g stroke="#FFC21A" stroke-width="1.9" stroke-linecap="round">' + sunRays + spin(animated, 48) + '</g>' +
+      '<circle cx="12" cy="12" r="5.2" fill="' + grad('wxSun') + '"/>' +
+      '<circle cx="12" cy="12" r="5.2" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>';
+  }
+  function moonArt() {
+    return '<circle cx="12" cy="12" r="11" fill="' + grad('wxMoonGlow') + '"/>' +
+      '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="' + grad('wxMoon') + '"/>' +
+      '<circle cx="14.6" cy="15.2" r="1.15" fill="rgba(0,0,0,0.13)"/><circle cx="11.2" cy="17.4" r="0.8" fill="rgba(0,0,0,0.13)"/><circle cx="8.6" cy="12.6" r="0.7" fill="rgba(0,0,0,0.13)"/>';
+  }
+  // A puffy cloud with a highlight on top and a soft shadow underneath. dark = storm / overcast.
+  function cloud(dx, dy, scale, dark, animated) {
+    var tf = 'translate(' + dx + ' ' + dy + ')' + (scale && scale !== 1 ? ' scale(' + scale + ')' : '');
+    return '<g transform="' + tf + '">' + bob(animated, -0.7, 7) +
+      '<path d="' + cloudPath + '" fill="' + grad(dark ? 'wxCloudDark' : 'wxCloud') + '"/>' +
+      '<path d="M8.4 10.7A4.2 4.2 0 0 1 12.7 7.7" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1" stroke-linecap="round"/>' +
+      '<path d="M7.3 18.4h10.2a3.6 3.6 0 0 0 2.8-1.3" fill="none" stroke="rgba(0,0,0,0.16)" stroke-width="1.2" stroke-linecap="round"/></g>';
+  }
+  function drop(cx, cy, h, w) {
+    return '<rect x="' + (cx - w / 2) + '" y="' + cy + '" width="' + w + '" height="' + h + '" rx="' + (w / 2) + '" fill="' + grad('wxDrop') + '" transform="rotate(14 ' + cx + ' ' + (cy + h / 2) + ')"/>';
+  }
+  function flake(cx, cy, r) {
+    var o = '';
+    for (var k = 0; k < 3; k++) {
+      var ang = k * Math.PI / 3;
+      o += '<line x1="' + (cx - Math.cos(ang) * r).toFixed(2) + '" y1="' + (cy - Math.sin(ang) * r).toFixed(2) + '" x2="' + (cx + Math.cos(ang) * r).toFixed(2) + '" y2="' + (cy + Math.sin(ang) * r).toFixed(2) + '"/>';
+    }
+    return o;
+  }
+  function wxIcon(name, animated) {
+    var body = '';
+    switch (name) {
+      case 'wx-sun': body = sunArt(animated); break;
+      case 'wx-moon': body = moonArt(); break;
+      case 'wx-partly-day': body = '<g transform="translate(0 0) scale(0.66)">' + sunArt(animated) + '</g>' + cloud(1.6, 1.4, 1, false, animated); break;
+      case 'wx-partly-night': body = '<g transform="translate(0.2 0.2) scale(0.62)">' + moonArt() + '</g>' + cloud(1.6, 1.4, 1, false, animated); break;
+      case 'wx-cloud': body = cloud(0, -0.8, 1, false, animated); break;
+      case 'wx-fog': body = cloud(0, -2.8, 1, false, animated) + '<g fill="' + grad('wxFog') + '"><rect x="4.5" y="18.4" width="15" height="1.8" rx="0.9"/><rect x="6.5" y="21" width="11" height="1.8" rx="0.9"/></g>'; break;
+      case 'wx-drizzle': body = cloud(0, -2.8, 1, false, animated) + drop(8.5, 18.2, 2.4, 1.5) + drop(12.5, 19.2, 2.4, 1.5) + drop(16.5, 18.2, 2.4, 1.5); break;
+      case 'wx-rain': body = cloud(0, -2.8, 1, false, animated) + drop(8.6, 17.6, 4.2, 1.9) + drop(12.6, 18.4, 4.2, 1.9) + drop(16.6, 17.6, 4.2, 1.9); break;
+      case 'wx-snow': body = cloud(0, -2.8, 1, false, animated) + '<g stroke="' + 'var(--wx-snow-ink)' + '" stroke-width="1" stroke-linecap="round">' + flake(8, 19.6, 1.5) + flake(12.3, 21.4, 1.5) + flake(16.6, 19.6, 1.5) + '</g>'; break;
+      case 'wx-sleet': body = cloud(0, -2.8, 1, false, animated) + drop(8.8, 17.8, 3.6, 1.8) + drop(15.8, 17.8, 3.6, 1.8) + '<g stroke="var(--wx-snow-ink)" stroke-width="1" stroke-linecap="round">' + flake(12.3, 20.8, 1.4) + '</g>'; break;
+      case 'wx-thunder': body = cloud(0, -3, 1, true, animated) + '<path d="M13.2 14.6 9.4 20.4h2.8l-1.1 3.3 4.3-5.9h-2.9l1.1-3.2z" fill="' + grad('wxBolt') + '" stroke="rgba(255,255,255,0.45)" stroke-width="0.4" stroke-linejoin="round"/>'; break;
+      default: return '';
+    }
+    return '<svg viewBox="0 0 24 24">' + body + '</svg>';
+  }
+  var WX_NAMES = ['wx-sun', 'wx-moon', 'wx-partly-day', 'wx-partly-night', 'wx-cloud', 'wx-fog', 'wx-drizzle', 'wx-rain', 'wx-snow', 'wx-sleet', 'wx-thunder'];
 
   TV.ICONS = {
     // ---- UI ----
@@ -43,28 +94,19 @@
     warning: line('<path d="M10.3 4.2 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.5" r=".9" fill="currentColor"/>'),
     check: line('<path d="M5 12.5 10 17.5 19 7"/>'),
     air: line('<path d="M3 9h10a2.5 2.5 0 1 0-2.5-2.5M3 13h14a2.5 2.5 0 1 1-2.5 2.5M3 17h6"/>'),
+    radar: line('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-4.6"/><circle cx="12" cy="12" r="1" fill="currentColor"/>'),
     hourglass: line('<path d="M7 3.5h10M7 20.5h10M8 3.5c0 4.5 3.2 5.2 4 8.5-.8 3.3-4 4-4 8.5M16 3.5c0 4.5-3.2 5.2-4 8.5.8 3.3 4 4 4 8.5"/>'),
     plus: line('<path d="M12 5v14M5 12h14"/>'),
     trash: line('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>'),
     up: line('<path d="M6 14l6-6 6 6"/>'),
     down: line('<path d="M6 10l6 6 6-6"/>'),
-    drop: line('<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/>'),
-
-    // ---- Weather (colored) ----
-    'wx-sun': color('<circle cx="12" cy="12" r="4.6" fill="' + SUN_C + '"/><g stroke="' + SUN_C + '" stroke-width="2" stroke-linecap="round">' + sunRays + '</g>'),
-    'wx-moon': color('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" style="fill:' + MOON_C + '"/>'),
-    'wx-partly-day': color(smallSun + '<path d="' + cloudPath + '" style="fill:' + CLOUD_C + '"/>'),
-    'wx-partly-night': color(smallMoon + '<path d="' + cloudPath + '" style="fill:' + CLOUD_C + '"/>'),
-    'wx-cloud': color('<path d="' + cloudPath + '" transform="translate(0 -1)" style="fill:' + CLOUD_C + '"/>'),
-    'wx-fog': color(cloudUp + '<g style="stroke:' + CLOUD_DARK + '" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="19.5" x2="19" y2="19.5"/><line x1="7" y1="22" x2="17" y2="22"/></g>'),
-    'wx-drizzle': color(cloudUp + '<g style="stroke:' + RAIN_C + '" stroke-width="1.8" stroke-linecap="round"><line x1="9" y1="19" x2="8.5" y2="20.5"/><line x1="13" y1="19" x2="12.5" y2="20.5"/><line x1="17" y1="19" x2="16.5" y2="20.5"/></g>'),
-    'wx-rain': color(cloudUp + '<g style="stroke:' + RAIN_C + '" stroke-width="2" stroke-linecap="round"><line x1="8.5" y1="18.5" x2="7.3" y2="22"/><line x1="12.5" y1="18.5" x2="11.3" y2="22"/><line x1="16.5" y1="18.5" x2="15.3" y2="22"/></g>'),
-    'wx-snow': color(cloudUp + '<g style="fill:' + SNOW_C + '"><circle cx="8" cy="20" r="1.3"/><circle cx="12" cy="21.5" r="1.3"/><circle cx="16" cy="20" r="1.3"/></g>'),
-    'wx-sleet': color(cloudUp + '<g style="stroke:' + RAIN_C + '" stroke-width="2" stroke-linecap="round"><line x1="8.5" y1="18.5" x2="7.5" y2="21.5"/><line x1="15.5" y1="18.5" x2="14.5" y2="21.5"/></g><circle cx="12" cy="21" r="1.3" style="fill:' + SNOW_C + '"/>'),
-    'wx-thunder': color(cloudUpDark + '<path d="M12.8 15.5 9.5 20.2h2.6l-1 3.3 3.6-4.9h-2.6l1.2-3.1z" fill="' + BOLT_C + '"/>')
+    drop: line('<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/>')
   };
+  WX_NAMES.forEach(function (n) { TV.ICONS[n] = wxIcon(n, false); });
 
-  TV.icon = function (name) { return TV.ICONS[name] || ''; };
+  // animated = true gives the weather illustrations their slow motion (used for the big icon only)
+  TV.icon = function (name, animated) { return animated && name.indexOf('wx-') === 0 ? wxIcon(name, true) : (TV.ICONS[name] || ''); };
+  TV.WX_ICON_NAMES = WX_NAMES;
 
   // Fill every <span data-icon="..."> in the page.
   TV.fillIcons = function (root) {

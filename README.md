@@ -1,11 +1,14 @@
 # Widgetapp TV
 
 An Apple-inspired home screen for Samsung (Tizen) TVs: your iCloud calendar, weather and a set of
-widgets on a themed, glass-style background. It is plain HTML, CSS and JavaScript with no build step.
+widgets on a themed, glass-style background, with a page of streaming apps one press of Down away.
+It is plain HTML, CSS and JavaScript with no build step.
 
-![Widgetapp TV preview, shown with sample data](docs/preview.png)
+![Widgetapp TV home screen, shown with sample data](docs/preview.png)
 
-![Ambient Mode: a calm clock over a photo slideshow, shown with sample data](docs/ambient.png)
+| Apps page | Ambient Mode |
+|---|---|
+| ![The Apps page](docs/apps.png) | ![Ambient Mode](docs/ambient.png) |
 
 It shows:
 - **Up Next:** your iCloud calendar
@@ -45,6 +48,20 @@ If you don't press anything for 15 seconds, the focus highlight disappears so th
 Up to 6 widgets fit on screen at once. Tiles stay large while they fit in one row, and switch to two
 rows of smaller tiles when more are showing. If there are more than fit on one screen, they split
 evenly into pages that rotate every 20 seconds. The dots show which page you're on.
+
+## The Apps page (streaming apps)
+
+Press **Down** past the last row of widgets and the whole screen slides up to a page of app tiles, like the Apple TV home screen. Press **Up** (from the top row) or **Back** to go home.
+Press OK on a tile to open that app (this only works when the dashboard is installed on the TV, see Setup 4B).
+
+- **How it finds your apps:** Samsung doesn't publish the IDs of the built-in apps, and they can differ between TVs. So the dashboard asks the **TV** which apps are installed and matches them by name
+  (Netflix, YouTube, Disney+, Prime Video, Apple TV, Max, Hulu, Peacock, Paramount+, Spotify, Plex, Tubi). When the TV answers, only the apps you really have are shown.
+  If it can't answer, all of them are shown and a few built-in IDs from an unofficial list are tried (**unverified**: they may not match your TV).
+- **Settings → Apps:** turn each app on or off, put them in your order, and use **Find Apps on This TV** to see exactly what the TV reports (names and IDs). Use that list to add or fix an app.
+- **Add or fix an app** in `config.local.js`: `c.apps = [{ name: 'Crunchyroll', id: 'THE.APP.ID', color: '#f47521' }];` (a built-in app with the same name is replaced).
+- **Logos:** the tiles use plain brand colors and a letter badge. The official logos are trademarks and are not included. To use one, put a PNG at `images/apps/<key>.png` (for example `images/apps/netflix.png`; the keys are `netflix`, `youtube`, `disney`, `prime`, `appletv`, `max`, `hulu`, `peacock`, `paramount`, `spotify`, `plex`, `tubi`).
+- Up to 15 apps are shown (5 across, 3 rows). The page also tints its background with the color of the app you have selected.
+- **Not tested on a real TV** by the author: opening apps and listing them are Samsung TV features that can't be reached from where this was built. If a tile doesn't open its app, Settings → Apps → Find Apps shows what the TV reports.
 
 ## Customize (Settings, the gear button)
 
@@ -130,6 +147,12 @@ Everything here comes from the calendar and weather the app already loads. Nothi
   calendar event titled **Countdown: Beach trip** (or start the title with the hourglass emoji) from your
   phone, and it appears here, up to a year ahead. You can also list them in `config.local.js` (`c.countdowns`).
   The widget stays hidden until there is one.
+- **Event cards:** each event in Up Next is a card with a side bar in the calendar's color, a big start time, and a chip with how long it lasts. The event happening now has a ring that fills as it goes and shows the time left. All-day events are slim banners.
+- **Weather illustrations:** the weather icons are soft shaded drawings (sun glow, puffy clouds, drops, snowflakes, lightning) that work in Light and Dark mode. The big one in the weather panel moves very gently; Animations Reduced or Off keeps it still.
+- **Rain radar widget:** a looping map of rain near you (last two hours, plus forecast frames when the service has them), with a pin on your place. Radar images are from **RainViewer**, whose free service is for personal and educational use and asks for a credit, which is always shown on the map. The base map is a Mapbox picture using your Mapbox token (without one, the radar is drawn on a plain backdrop). OK opens a big view: OK plays or pauses, Left and Right step through the frames. It checks for new radar every 10 minutes and hides itself if it can't get any.
+  **Not tested against the live service by the author.** One third-party source says RainViewer's free tier was restricted in 2026 (zoom limit, one color scheme, no forecast frames), which I couldn't confirm; the dashboard uses a low zoom (6) and works without forecast frames.
+- **Commute map:** with a Mapbox token the Commute widget also shows a small map of your route (orange line, pins A and B), and a larger one in its full-screen view. If the picture can't load, the widget stays text-only. Not tested against Mapbox by the author.
+- **Depth:** the background drifts a few pixels the opposite way to whatever you select, so the panels feel like they float in front of it (and Apps tiles lean toward the way you moved). It follows the Animations setting (Full only) and Moving Background.
 - **Selection glow:** one soft glow slides from the panel you leave to the panel you select.
 - **Motion:** the screen opens with the panels rising into place, tiles fade in when the widgets
   rotate, and a number that changes (temperature, drive time) brightens for a moment. Everything uses
@@ -206,9 +229,28 @@ unidentified developer, Control-click it → **Open** → **Open**.
 Keep choosing your HomePods from your iPhone's AirPlay menu. The TV shows what's playing and can
 pause and skip.
 
-### 4. Install on your Samsung TV (from your Mac)
+### 4. Get it on your Samsung TV
 
-You need **Tizen Studio** (Samsung's free tool) and a free **Samsung account**.
+There are two ways. Do **A** first: it takes five minutes and nothing is installed on the TV.
+
+**A. Try it on the TV right now (no installing)**
+
+1. Make sure your Mac and your TV are on the same Wi-Fi.
+2. Double-click **`Start TV Preview.command`** in this folder. (If macOS says it can't be opened, Control-click it, then **Open**.)
+   It prints an address like `http://192.168.1.20:8765/index.html`.
+3. On the TV, open the **Internet** (browser) app, type that address, and press OK. Add `?demo=1` to the end to see sample data instead of your own.
+
+Limits: the browser's own bars show, your Mac has to stay on, and **apps cannot be opened from a browser**, so the Apps page only explains that (that needs B).
+While it runs, anyone on your home Wi-Fi could read the app's files, including `config.local.js`, so close the window when you are done.
+
+**B. Install it as a real app (stays on the TV)**
+
+You need **Tizen Studio** (Samsung's free tool) and a free **Samsung account**. Before you start, write down:
+
+- **Your TV's model and year:** Settings → Support → About This TV. Samsung's steps differ a little between TV years, and Samsung's guide is the reference:
+  https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html
+- **Your Mac's chip:** Apple menu → About This Mac. Tizen Studio is made for Intel Macs. On an Apple silicon Mac (M1 and newer) it runs through Rosetta 2, which macOS offers to install, and Samsung's TV *emulator* does not work there.
+  You do not need the emulator, because you install straight onto the real TV. (This comes from older Samsung forum posts, so check Samsung's page for the current state.)
 
 **a. Install Tizen Studio**
 1. Download Tizen Studio for macOS from https://developer.tizen.org/development/tizen-studio/download
@@ -242,9 +284,15 @@ You need **Tizen Studio** (Samsung's free tool) and a free **Samsung account**.
 From then on it's in the TV's Apps list as **Dashboard**. After you change `config.local.js` or
 `spotify.local.js`, copy them into the project again and repeat **Run As** to update the TV.
 
-> Note: these steps follow Samsung's published process and were not run on a physical TV by the
-> author. If a menu name differs in your version of Tizen Studio, Samsung's guide is at
-> https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html
+**If something goes wrong**
+
+- **"Install failed" or a certificate error:** the certificate has to be created while the TV is connected (step c), with the same Samsung account. Make a new certificate profile and try again.
+- **Tizen Studio can't see the TV:** the Mac and the TV must be on the same network; the IP typed into the TV's Developer Mode screen must be your **Mac's**, and the IP in Device Manager must be the **TV's**. Restart the TV after changing Developer Mode.
+- **The app opens but looks empty or wrong:** open the same folder with A above. If it works there, a file was missed when copying into the Tizen project; copy everything again.
+- **Apps page can't open apps:** the app asks the TV for permission to see and open apps (listed in `config.xml`). After updating the files, repeat **Run As** so the TV picks up the new permissions.
+- **Still stuck:** tell me (1) your TV model and year, (2) your Mac's chip, and (3) the exact error text or a photo of the step that failed.
+
+> Note: the author could not run Tizen Studio or reach a Samsung TV while building this, so the steps above follow Samsung's published process and have not been tried on a real TV.
 
 ### 5. If the calendar doesn't load on the TV
 
@@ -263,6 +311,8 @@ the request to iCloud (a "CORS" error). Set up the small free proxy in `proxy/RE
 | Weather alerts | US National Weather Service (US locations only) | Free, no key |
 | Holidays | Nager.Date | Free, no key |
 | Air quality and UV | Open-Meteo air-quality service | Free, no key |
+| Rain radar | RainViewer (weather-maps index and tiles) | Free for personal use, credit shown on screen |
+| Maps (commute route, radar base map) | Mapbox Static Images, same token as Commute | Free token from https://account.mapbox.com |
 | Commute | Mapbox Directions with traffic | Free tier, needs a token |
 | Space photo | NASA APOD | Free, key recommended |
 | Spotify | Spotify Web API | Needs Spotify Premium |
@@ -282,7 +332,9 @@ config.xml            Samsung/Tizen app manifest
 css/styles.css        the look (Apple-style frosted cards, light/dark)
 fonts/                the Inter typeface and its license
 js/                   app code (ics.js = calendar reader, smart.js = countdowns, rain, UV and air levels, palette.js = album colors, widgets/ = each widget)
-images/wallpapers/    put your own background photos here (the demo-*.svg files are only used by the preview)
+images/art/           the built-in artwork (drawn wallpapers)
+images/wallpapers/    put your own background photos here
+images/apps/          optional PNG logos for the Apps page (<key>.png)
 tools/                Spotify sign-in tool
 proxy/                optional calendar proxy (Cloudflare Worker)
 test/                 automated checks (not needed on the TV)
@@ -323,15 +375,20 @@ test/                 automated checks (not needed on the TV)
 
 ```bash
 TZ=America/Denver node test/ics.test.js      # calendar reader: 25 checks
-node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, countdowns, day strip: 95 checks
-node test/pack.test.js                       # tile packing, incl. the double-width Spotify tile: 32 checks
+node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, day strip: 95 checks
+node test/pack.test.js                       # tile packing, incl. the double-width tiles: 32 checks
 node test/palette.test.js                    # album-art colors and the brightness cap: 12 checks
+node test/appmatch.test.js                   # finding your streaming apps on the TV, config overrides, ordering: 30 checks
+node test/radarmath.test.js                  # radar map-tile maths, frame picking, Mapbox map URLs: 42 checks
+node test/apps-contrast.test.js              # readability of the text on the Apps page: 4 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
-node test/ui.test.js                         # screen, remote, options, settings, album background, weather effects, Ambient Mode, slideshow, Air & UV, Countdown, selection glow: 99 checks
+node test/art.test.js                        # every built-in artwork is readable in Dark mode (same worst-case model as the themes): 8 checks
+node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow: 183 checks
 ```
 
 ## Credits and license
 
 Code: [GNU GPL v3](LICENSE). The bundled [Inter](https://rsms.me/inter/) typeface is under the SIL Open
 Font License (see `fonts/OFL-LICENSE.txt`). Weather data is from Open-Meteo and US National Weather
-Service alerts; photos from NASA's Astronomy Picture of the Day; holidays from Nager.Date.
+Service alerts; rain radar images from RainViewer; maps from Mapbox; photos from NASA's Astronomy Picture
+of the Day; holidays from Nager.Date.
