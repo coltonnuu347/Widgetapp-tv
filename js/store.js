@@ -23,8 +23,8 @@
     manualLocation: null,
     // Starts with the widgets config.local.js turns off; changes made on the TV are saved over this.
     widgets: { order: [], disabled: (TV_CONFIG.widgetsOff || []).slice() },
-    // Streaming apps on the Apps page: your order, and the ones you turned off
-    apps: { order: [], disabled: [] },
+    // Streaming apps on the Apps page: your order, the ones you turned off or on, and apps you added from the TV
+    apps: { order: [], disabled: [], enabled: [], custom: [] },
     prefs: JSON.parse(JSON.stringify(TV.PREF_DEFAULTS))
   };
 

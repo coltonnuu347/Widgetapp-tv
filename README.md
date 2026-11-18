@@ -51,17 +51,18 @@ evenly into pages that rotate every 20 seconds. The dots show which page you're 
 
 ## The Apps page (streaming apps)
 
-Press **Down** past the last row of widgets and the whole screen slides up to a page of app tiles, like the Apple TV home screen. Press **Up** (from the top row) or **Back** to go home.
-Press OK on a tile to open that app (this only works when the dashboard is installed on the TV, see Setup 4B).
+Press **Down** past the last row of widgets and the whole screen slides up to a page of app tiles, like the Apple TV home screen. Press **Up** (from the top row of tiles you reach **Edit**; Up again, or **Back**, goes home).
+Press OK on a tile to open that app (this only works when the dashboard is installed on the TV, see Setup 4B). The tiles are four across and three rows show at a time; if you add more, the rows slide.
 
-- **How it finds your apps:** Samsung doesn't publish the IDs of the built-in apps, and they can differ between TVs. So the dashboard asks the **TV** which apps are installed and matches them by name
-  (Netflix, YouTube, Disney+, Prime Video, Apple TV, Max, Hulu, Peacock, Paramount+, Spotify, Plex, Tubi). When the TV answers, only the apps you really have are shown.
-  If it can't answer, all of them are shown and a few built-in IDs from an unofficial list are tried (**unverified**: they may not match your TV).
-- **Settings → Apps:** turn each app on or off, put them in your order, and use **Find Apps on This TV** to see exactly what the TV reports (names and IDs). Use that list to add or fix an app.
-- **Add or fix an app** in `config.local.js`: `c.apps = [{ name: 'Crunchyroll', id: 'THE.APP.ID', color: '#f47521' }];` (a built-in app with the same name is replaced).
-- **Logos:** the tiles use plain brand colors and a letter badge. The official logos are trademarks and are not included. To use one, put a PNG at `images/apps/<key>.png` (for example `images/apps/netflix.png`; the keys are `netflix`, `youtube`, `disney`, `prime`, `appletv`, `max`, `hulu`, `peacock`, `paramount`, `spotify`, `plex`, `tubi`).
-- Up to 15 apps are shown (5 across, 3 rows). The page also tints its background with the color of the app you have selected.
-- **Not tested on a real TV** by the author: opening apps and listing them are Samsung TV features that can't be reached from where this was built. If a tile doesn't open its app, Settings → Apps → Find Apps shows what the TV reports.
+- **Add or remove apps:** press **Edit** at the top of the page (or **Settings → Apps → Add or Remove Apps**). Every service the dashboard knows is listed with its logo: turn one **On** to put it on the page, **Off** to take it away, and use the arrows to change the order. 28 services are known (12 are on to start with: Netflix, YouTube, Disney+, Prime Video, Apple TV, HBO Max, Hulu, Peacock, Paramount+, Spotify, Plex, Tubi; the rest include Crunchyroll, Twitch, Apple Music, YouTube Music, YouTube TV, Vimeo, TIDAL, Fubo, Pandora, SoundCloud, Deezer, Kick, DAZN, Kodi, Pluto TV and ESPN).
+  On the TV, the editor also lists the other apps the TV reports; press **Add** for one to give it a tile of its own (a letter tile), and the trash button removes it again.
+- **How it finds your apps:** Samsung doesn't publish the IDs of the built-in apps, and they can differ between TVs. So the dashboard asks the **TV** which apps are installed and matches them by name. When the TV answers, only the apps you really have are shown.
+  If it can't answer, the ones that are on are all shown and a few built-in IDs from an unofficial list are tried (**unverified**: they may not match your TV). **Find Apps on This TV** (in the editor and in Settings) shows exactly what the TV reports (names and IDs).
+- **Fix or add an app** in `config.local.js`: `c.apps = [{ name: 'Crunchyroll', id: 'THE.APP.ID', color: '#f47521' }];` (a service with the same name keeps its logo and gets your ID; listing it there also turns it on).
+- **Logos:** each tile uses the service's icon in its own color on its brand-colored tile. The icons come from [Simple Icons](https://simpleicons.org) (version 16.38.0, public domain, CC0). Disney+, Prime Video, Hulu, Peacock, Pluto TV and ESPN are not in that set, so their tiles show a plain text wordmark instead; they are **not** the official artwork.
+  The names and logos are trademarks of their owners; they are only used to show which app a tile opens, and this project is not affiliated with or endorsed by any of them. To use an official logo of your own, put a PNG at `images/apps/<key>.png` (for example `images/apps/disney.png`); it replaces the built-in artwork. The keys are the lower-case service names without spaces: `netflix`, `youtube`, `disney`, `prime`, `appletv`, `hbomax`, `hulu`, `peacock`, `paramount`, `spotify`, `plex`, `tubi`, `crunchyroll`, `twitch`, and so on (see `js/appmatch.js`).
+- **The slide:** one long, soft ease-out; while it runs the blur, shadows and background motion are paused so it stays smooth. In a slow software-rendered test browser that cut the average frame time from 72 to 54 ms and the very slow frames (over 100 ms) from about 5 to 1 per slide; a TV's own hardware will behave differently, so judge it on the TV. The page also tints its background with the color of the app you have selected.
+- **Not tested on a real TV** by the author: opening apps and listing them are Samsung TV features that can't be reached from where this was built. If a tile doesn't open its app, Find Apps on This TV shows what the TV reports.
 
 ## Customize (Settings, the gear button)
 
@@ -331,7 +332,7 @@ spotify.local.example.js   the Spotify sign-in tool writes spotify.local.js (git
 config.xml            Samsung/Tizen app manifest
 css/styles.css        the look (Apple-style frosted cards, light/dark)
 fonts/                the Inter typeface and its license
-js/                   app code (ics.js = calendar reader, smart.js = countdowns, rain, UV and air levels, palette.js = album colors, widgets/ = each widget)
+js/                   app code (appmatch.js = the streaming services, logos.js = their icons, ics.js = calendar reader, smart.js = countdowns, rain, UV and air levels, palette.js = album colors, widgets/ = each widget)
 images/art/           the built-in artwork (drawn wallpapers)
 images/wallpapers/    put your own background photos here
 images/apps/          optional PNG logos for the Apps page (<key>.png)
@@ -378,12 +379,12 @@ TZ=America/Denver node test/ics.test.js      # calendar reader: 25 checks
 node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, day strip: 95 checks
 node test/pack.test.js                       # tile packing, incl. the double-width tiles: 32 checks
 node test/palette.test.js                    # album-art colors and the brightness cap: 12 checks
-node test/appmatch.test.js                   # finding your streaming apps on the TV, config overrides, ordering: 30 checks
+node test/appmatch.test.js                   # the 28 services, finding them on the TV, the editor's list logic, tile readability: 59 checks
 node test/radarmath.test.js                  # radar map-tile maths, frame picking, Mapbox map URLs: 42 checks
-node test/apps-contrast.test.js              # readability of the text on the Apps page: 4 checks
+node test/apps-contrast.test.js              # readability of the text on the Apps page and the Edit button: 6 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
 node test/art.test.js                        # every built-in artwork is readable in Dark mode (same worst-case model as the themes): 8 checks
-node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow: 183 checks
+node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow, the app editor: 202 checks
 ```
 
 ## Credits and license
@@ -391,4 +392,6 @@ node test/ui.test.js                         # screen, remote, options, settings
 Code: [GNU GPL v3](LICENSE). The bundled [Inter](https://rsms.me/inter/) typeface is under the SIL Open
 Font License (see `fonts/OFL-LICENSE.txt`). Weather data is from Open-Meteo and US National Weather
 Service alerts; rain radar images from RainViewer; maps from Mapbox; photos from NASA's Astronomy Picture
-of the Day; holidays from Nager.Date.
+of the Day; holidays from Nager.Date. Streaming service icons on the Apps page are from
+[Simple Icons](https://simpleicons.org) (CC0); the names and logos are trademarks of their owners, shown only to
+identify the app a tile opens, with no affiliation or endorsement.

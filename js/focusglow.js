@@ -7,7 +7,11 @@
   // Position of an element inside #app in layout pixels (ignores the focus "lift" scaling).
   function offsetIn(el, root) {
     var x = 0, y = 0, e = el;
-    while (e && e !== root) { x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; }
+    while (e && e !== root) {
+      x += e.offsetLeft; y += e.offsetTop;
+      if (e.getAttribute && e.getAttribute('data-sy')) y += parseFloat(e.getAttribute('data-sy'));   // a scrolled list of tiles
+      e = e.offsetParent;
+    }
     return e === root ? { x: x, y: y } : null;
   }
 

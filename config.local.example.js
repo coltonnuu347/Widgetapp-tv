@@ -30,7 +30,8 @@
   // Countdowns (or make a calendar event titled "Countdown: Beach trip" from your phone).
   // c.countdowns = [{ name: 'Beach trip', date: '2026-12-20' }, { name: 'Anniversary', date: '06-14' }];
 
-  // Extra streaming apps for the Apps page, or to fix one (find IDs on the TV: Settings > Apps > Find Apps on This TV).
+  // Extra streaming apps for the Apps page, or to fix one (find IDs on the TV: Edit > Find Apps on This TV).
+  // You can also add or remove services on the TV itself: press Edit on the Apps page.
   // c.apps = [{ name: 'Crunchyroll', id: 'THE.APP.ID', color: '#f47521' }];
 
   // Your own wallpaper photos (put the files in images/wallpapers/). With two or more you get a Slideshow

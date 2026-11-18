@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 global.window = { TV: { on() {}, $() {} } }; global.setInterval = () => 0;
 eval(fs.readFileSync(path.join(__dirname, '../js/themes.js'), 'utf8'));
-const { CATALOG } = require('../js/appmatch.js');
+const { CATALOG, washColor } = require('../js/appmatch.js');
 const G = window.TV.GRADIENTS;
 const css = fs.readFileSync(path.join(__dirname, '../css/styles.css'), 'utf8');
 
@@ -29,7 +29,7 @@ check('the wash is faint where the text is (under 8%)', strongest < 0.08, 'stron
 const vigDark = +/--clock-vignette: rgba\(0, 0, 0, ([\d.]+)\)/.exec(css)[1], vigLight = +/--clock-vignette: rgba\(255, 255, 255, ([\d.]+)\)/.exec(css)[1];
 let dark = 99, light = 99;
 for (const g of G) for (const c of [g.base, ...g.blobs].map(hex)) for (const app of CATALOG) {
-  const brand = hex(app.color[0]);
+  const brand = hex(washColor(app));
   const bgD = mix(K, vigDark, mix(brand, strongest, mix(K, 0.42, mix(W, 0.14, c))));
   dark = Math.min(dark, ratio(W, bgD));
   const litL = mix(hex('#20359a'), 0.16, mix(W, 0.14, c));
@@ -38,6 +38,15 @@ for (const g of G) for (const c of [g.base, ...g.blobs].map(hex)) for (const app
 }
 check('white text on the Apps page background stays at 4.5:1 or better in Dark mode (worst ' + dark.toFixed(2) + ')', dark >= 4.5, dark.toFixed(2));
 check('black text stays at 4.5:1 or better in Light mode (worst ' + light.toFixed(2) + ')', light >= 4.5, light.toFixed(2));
+// The Edit pill is glass (same material as the round buttons on Home): its text sits on the glass, not on the bare background
+const glassD = +/body\.mode-dark \{[^}]*--glass: rgba\(28, 28, 30, ([\d.]+)\)/.exec(css)[1], glassL = +/body\.mode-light \{[^}]*--glass: rgba\(255, 255, 255, ([\d.]+)\)/.exec(css)[1];
+let pillD = 99, pillL = 99;
+for (const g of G) for (const c of [g.base, ...g.blobs].map(hex)) {
+  pillD = Math.min(pillD, ratio(W, mix([28, 28, 30], glassD, mix(W, 0.14, c))));
+  pillL = Math.min(pillL, ratio(K, mix([255, 255, 255], glassL, mix(hex('#20359a'), 0.16, mix(W, 0.14, c)))));
+}
+check('the Edit pill text is 4.5:1 or better on the glass in Dark mode (worst ' + pillD.toFixed(2) + ')', pillD >= 4.5, pillD.toFixed(2));
+check('...and in Light mode (worst ' + pillL.toFixed(2) + ')', pillL >= 4.5, pillL.toFixed(2));
 check('the shading behind the title and footer exists in the stylesheet', /#apps-head::before, #apps-foot::before/.test(css), 'missing');
 
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
