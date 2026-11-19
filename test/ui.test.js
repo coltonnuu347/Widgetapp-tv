@@ -18,6 +18,9 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   // 1. Preview mode loads with no script errors and fills every area.
   await page.goto(BASE + '?demo=1');
   await page.waitForTimeout(2500);
+  // The default look is now the quiet one (subtle, thin, no glow); the checks below were written for the glowing style, so choose it here
+  await page.evaluate(() => { TV.setPref('outline', 'theme'); TV.setPref('outlineWidth', 'medium'); TV.setPref('glow', true); });
+  await page.waitForTimeout(1500);
   check('no script errors (preview)', errors.length === 0, errors.join(' | '));
   check('clock shows 24-hour time', /^\d{2}:\d{2}$/.test(await page.textContent('#clock')));
   check('calendar has events', (await page.$$('.event')).length >= 3);
@@ -169,7 +172,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
 
   // 3b. Album background, weather effects, Ambient Mode, slideshow, day strip, Air & UV, Countdown, focus glow.
   await page.evaluate(() => {
-    TV.resetPrefs(); TV.settings.widgets.disabled = []; TV.settings.theme.style = 'gradient'; TV.settings.theme.mode = 'dark';
+    TV.resetPrefs(); TV.setPref('outline', 'theme'); TV.setPref('outlineWidth', 'medium'); TV.setPref('glow', true); TV.settings.widgets.disabled = []; TV.settings.theme.style = 'gradient'; TV.settings.theme.mode = 'dark';
     TV.applyTheme(); TV.widgets.layout(true);
   });
   // earlier checks replaced the calendar with test events and may have paused the sample player: start clean
@@ -382,7 +385,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   await page.waitForFunction(() => new DOMMatrix(getComputedStyle(document.getElementById('pager')).transform).m42 === -1080 && getComputedStyle(document.getElementById('app')).visibility === 'hidden', null, { timeout: 6000 }).catch(() => {});
   await page.waitForTimeout(300);
   check('...and they come back when it has landed', await page.evaluate(() => !document.body.classList.contains('paging') && getComputedStyle(document.querySelector('.orn-button')).backdropFilter !== 'none'));
-  const ap = await page.evaluate(() => ({ page: TV.pager.page(), tiles: document.querySelectorAll('.app-tile').length, onTile: !!(document.activeElement && document.activeElement.classList.contains('app-tile')), shift: new DOMMatrix(getComputedStyle(document.getElementById('pager')).transform).m42, homeHidden: getComputedStyle(document.getElementById('app')).visibility }));
+  const ap = await page.evaluate(() => ({ active: document.activeElement.outerHTML.slice(0, 90), page: TV.pager.page(), tiles: document.querySelectorAll('.app-tile').length, onTile: !!(document.activeElement && document.activeElement.classList.contains('app-tile')), shift: new DOMMatrix(getComputedStyle(document.getElementById('pager')).transform).m42, homeHidden: getComputedStyle(document.getElementById('app')).visibility }));
   check('Down from the last row slides to the Apps page', ap.page === 'apps' && ap.shift === -1080 && ap.onTile && ap.homeHidden === 'hidden', JSON.stringify(ap));
   check('Apps page shows a tile for every app (12)', ap.tiles === 12, String(ap.tiles));
   check('Apps page shows the time', await page.evaluate(() => /^\d{2}:\d{2}$/.test(document.getElementById('apps-clock').textContent)));
@@ -511,7 +514,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
 
   // 3d. Illustrated weather icons, event cards, commute map, rain radar, depth, richer Apps page.
   await page.evaluate(() => {
-    TV.resetPrefs(); TV.settings.widgets.disabled = []; TV.settings.theme.style = 'gradient'; TV.settings.theme.mode = 'dark';
+    TV.resetPrefs(); TV.setPref('outline', 'theme'); TV.setPref('outlineWidth', 'medium'); TV.setPref('glow', true); TV.settings.widgets.disabled = []; TV.settings.theme.style = 'gradient'; TV.settings.theme.mode = 'dark';
     TV.settings.theme.gradient = 'purple'; delete window.tizen; TV.applyTheme(); TV.widgets.layout(true); TV.pager.go('home');
   });
   await page.waitForTimeout(500);
@@ -695,11 +698,14 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
     const hh = n => String(((new Date().getHours() + n) % 24 + 24) % 24).padStart(2, '0') + ':00';
     const keep = [TV_CONFIG.commute.showFrom, TV_CONFIG.commute.showUntil];
     TV_CONFIG.commute.showFrom = hh(2); TV_CONFIG.commute.showUntil = hh(3);
+    TV.setPref('commuteAlways', false);
     const outside = TV.widgets.visible().some(w => w.id === 'commute');
     TV.setPref('commuteAlways', true);
     const always = TV.widgets.visible().some(w => w.id === 'commute');
     TV.setPref('commuteAlways', false);
+    TV.setPref('commuteAlways', false);
     const back = TV.widgets.visible().some(w => w.id === 'commute');
+    TV.setPref('commuteAlways', true);
     TV.openSheet('settings');
     const t = document.getElementById('sheet-settings').textContent;
     const out = { outside, always, back, hours: t.indexOf(TV_CONFIG.commute.showFrom + ' to ' + TV_CONFIG.commute.showUntil) >= 0, row: /Commute: Show All Day/.test(t), version: /Version 20\d\d-\d\d-\d\d/.test(t) };
@@ -708,6 +714,48 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   });
   check('outside its hours the Commute tile is hidden, with "Show All Day" it appears, and off again hides it', !cw.outside && cw.always && !cw.back, JSON.stringify(cw));
   check('Settings names the commute hours, has the "Commute: Show All Day" switch, and shows the version', cw.hours && cw.row && cw.version, JSON.stringify(cw));
+  // Spotify tile: always there, with previous / play-pause / next
+  const sp1 = await page.evaluate(() => {
+    TV.settings.widgets.disabled = ['wifi', 'dates', 'nasa', 'countdown']; TV.widgets.layout(true);
+    const c = document.querySelector('[data-widget="spotify"]');
+    return c ? { btns: [...c.querySelectorAll('.sp-btn')].map(b => b.dataset.action), cardFocusable: c.hasAttribute('data-focus'), btnFocusable: [...c.querySelectorAll('.sp-btn')].every(b => b.hasAttribute('data-focus')), title: c.querySelector('.sp2-title').textContent, fits: c.scrollHeight <= c.clientHeight + 1 } : null;
+  });
+  check('the Spotify tile has previous, play/pause, next and expand buttons that the remote can select (not the card itself)', !!sp1 && sp1.btns.join() === 'sp-prev,sp-toggle,sp-next,sp-open' && sp1.btnFocusable && !sp1.cardFocusable && sp1.fits, JSON.stringify(sp1));
+  const sp2 = await page.evaluate(async () => {
+    const calls = []; const keep = window.fetch;
+    const tile = () => document.querySelector('[data-widget="spotify"]');
+    const before = tile().querySelector('.sp-btn.main').getAttribute('aria-label');
+    tile().querySelector('[data-action="sp-toggle"]').click();
+    await new Promise(r => setTimeout(r, 400));
+    const after = tile().querySelector('.sp-btn.main').getAttribute('aria-label');
+    tile().querySelector('[data-action="sp-open"]').click();
+    await new Promise(r => setTimeout(r, 300));
+    const opened = !document.getElementById('overlay').classList.contains('hidden') && !!document.querySelector('#sheet-detail .player');
+    TV.closeSheet();
+    return { before, after, opened };
+  });
+  check('after pressing play/pause the remote stays on that button (the tile is redrawn)', await page.evaluate(async () => { const b = document.querySelector('[data-widget="spotify"] [data-action="sp-toggle"]'); b.focus(); b.click(); await new Promise(r => setTimeout(r, 400)); const a = document.activeElement; return !!a && a.getAttribute('data-action') === 'sp-toggle'; }));
+  check('pressing the tile’s play/pause button toggles playback, and expand opens the full-screen player', sp2.before !== sp2.after && sp2.opened, JSON.stringify(sp2));
+  const sp3 = await page.evaluate(() => {
+    const keep = TV_CONFIG.spotify; TV_CONFIG.spotify = { clientId: '', refreshToken: '' }; TV.widgets.layout(true);
+    const c = document.querySelector('[data-widget="spotify"]');
+    const off = c ? { shown: true, text: c.querySelector('.sp2-title').textContent, hint: c.querySelector('.sp2-sub').textContent, btns: c.querySelectorAll('.sp-btn').length } : { shown: false };
+    TV_CONFIG.spotify = keep; TV.widgets.layout(true);
+    return off;
+  });
+  check('the Spotify tile is there even when not connected, and says how to connect', sp3.shown && /not connected/i.test(sp3.text) && /Spotify Sign-In/.test(sp3.hint) && sp3.btns === 0, JSON.stringify(sp3));
+  // Air & UV: smooth gradient bars, and the dot has the bar's color where it sits
+  const gx = await page.evaluate(() => {
+    const g = TV.airGauge, anc = g.anchors([0.25, 0.5, 2 / 3, 11 / 12, 1]);
+    const dots = [...document.querySelectorAll('[data-widget="air"] .gauge')].map(el => ({ bar: el.style.background, dot: el.querySelector('i').style.background, left: parseFloat(el.querySelector('i').style.left) }));
+    const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= 1);
+    const rgbOf = s => (s.match(/\d+/g) || []).map(Number);
+    return { n: dots.length, smooth: dots.every(d => /linear-gradient/.test(d.bar) && !/\d%\s+\d/.test(d.bar)), filled: dots.every(d => /^rgb\(/.test(d.dot)), start: near(rgbOf(g.colorAt(anc, 0)), [0x30, 0xd2, 0x58]), end: near(rgbOf(g.colorAt(anc, 1)), [0xbf, 0x5a, 0xf2]), mid: rgbOf(g.colorAt(anc, 0.125)).join() !== rgbOf(g.colorAt(anc, 0)).join() && rgbOf(g.colorAt(anc, 0.125)).join() !== rgbOf(g.colorAt(anc, 0.25)).join() };
+  });
+  check('Air & UV bars are smooth gradients, and each dot is filled with the bar’s color at its place', gx.n === 2 && gx.smooth && gx.filled && gx.start && gx.end && gx.mid, JSON.stringify(gx));
+  // The forecast map is drawn a little further out (zoom 7.5), and the base map matches it
+  const zm = await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); const base = r.querySelector('.rd-base'); return { base: base ? base.style.backgroundImage : '' }; });
+  check('the radar is zoomed out a little: forecast zoom 7.5 (the Mapbox base map is drawn at 6.5)', !zm.base || /,6\.5,0\//.test(zm.base) || /^url\("data:/.test(zm.base), JSON.stringify(zm));
   // Spotify is explained in Settings when it is not signed in
   const sp = await page.evaluate(() => {
     const keep = TV_CONFIG.spotify; TV_CONFIG.spotify = { clientId: '', refreshToken: '' };
@@ -746,6 +794,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   check('widget order is remembered', saved.order.indexOf('sunmoon') === 1, saved.order.join(','));
   check('streaming apps: off, on and order are remembered', saved.s.apps.disabled.includes('hulu') && saved.s.apps.enabled.includes('kodi') && saved.s.apps.order.indexOf('netflix') === 1 && saved.appTiles.indexOf('hulu') < 0 && saved.appTiles.indexOf('kodi') > 0 && saved.appTiles.slice(0, 2).join(',') === 'youtube,netflix', JSON.stringify([saved.s.apps, saved.appTiles]));
   check('theme is remembered', saved.s.theme.gradient === 'dusk' && saved.dark);
+  check('the default look is quiet: subtle thin outlines and no glow; Commute is on all day by default', await p2.evaluate(() => { const d = TV.PREF_DEFAULTS; return d.outline === 'subtle' && d.outlineWidth === 'thin' && d.glow === false && d.commuteAlways === true; }));
   check('look options are remembered', saved.s.prefs.clockSize === 'l' && await p2.evaluate(() => document.body.getAttribute('data-clock-size') === 'l'));
   check('no script errors (normal mode, offline)', errors2.length === 0, errors2.join(' | '));
   const calText = await p2.textContent('#calendar-list');

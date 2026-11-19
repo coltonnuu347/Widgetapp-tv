@@ -100,7 +100,8 @@
     trash: line('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>'),
     up: line('<path d="M6 14l6-6 6 6"/>'),
     down: line('<path d="M6 10l6 6 6-6"/>'),
-    drop: line('<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/>')
+    drop: line('<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/>'),
+    expand: line('<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>')
   };
   WX_NAMES.forEach(function (n) { TV.ICONS[n] = wxIcon(n, false); });
 

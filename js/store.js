@@ -3,15 +3,15 @@
   var KEY = 'tvdash.settings.v1';
 
   // Starting values for everything under Settings > Clock, Layout, Glass & Outlines, Panels.
-  TV.VERSION = '2026-11-19 c (radar forecast beside the weather, no-cache server)';   // shown at the bottom of Settings, so you can tell which copy is running
+  TV.VERSION = '2026-11-19 d (Spotify tile always on, gradient gauges, quiet look)';   // shown at the bottom of Settings, so you can tell which copy is running
   TV.PREF_DEFAULTS = {
     clockStyle: 'thin', clockSize: 'm', hour12: false, seconds: false,
     density: 'compact', calSide: 'left',
-    outline: 'theme', outlineWidth: 'medium', glass: 'frosted', corners: 'round', glow: true, motion: true,
+    outline: 'subtle', outlineWidth: 'thin', glass: 'frosted', corners: 'round', glow: false, motion: true,
     calDays: Math.max(1, TV_CONFIG.calendarDays || 7), hours: 12, unit: 'F',
     statHilo: true, statFeels: true, statHumidity: true, statWind: true,
     anim: 'full', greeting: true, nightDim: true,
-    spotifyWide: true, commuteAlways: false,
+    spotifyWide: true, commuteAlways: true,
     albumBg: true, wxfx: true, ambient: 10
   };
 

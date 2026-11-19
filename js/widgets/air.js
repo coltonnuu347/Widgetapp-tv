@@ -7,13 +7,31 @@
   // Gauge scales: where each level starts, as a share of the bar (UV runs to 12, AQI to 300).
   var UV_MAX = 12, AQI_MAX = 300;
   var COLORS = { good: '#30d158', moderate: '#ffd60a', high: '#ff9f0a', bad: '#ff453a', severe: '#bf5af2' };
-  function track(stops) {
-    var keys = ['good', 'moderate', 'high', 'bad', 'severe'], css = [], from = 0;
-    stops.forEach(function (to, i) { css.push(COLORS[keys[i]] + ' ' + (from * 100).toFixed(2) + '% ' + (to * 100).toFixed(2) + '%'); from = to; });
-    return 'linear-gradient(to right,' + css.join(',') + ')';
+  var KEYS = ['good', 'moderate', 'high', 'bad', 'severe'];
+  // One color per level, placed in the middle of that level's part of the bar and blended smoothly between (the ends are pure colors).
+  function anchors(edges) {
+    var from = 0, out = [];
+    edges.forEach(function (to, i) { out.push({ p: (from + to) / 2, c: COLORS[KEYS[i]] }); from = to; });
+    out[0].p = 0; out[out.length - 1].p = 1;
+    return out;
   }
-  var UV_TRACK = track([3 / UV_MAX, 6 / UV_MAX, 8 / UV_MAX, 11 / UV_MAX, 1]);
-  var AQI_TRACK = track([50 / AQI_MAX, 100 / AQI_MAX, 150 / AQI_MAX, 200 / AQI_MAX, 1]);
+  function track(anc) {
+    return 'linear-gradient(to right,' + anc.map(function (a) { return a.c + ' ' + (a.p * 100).toFixed(2) + '%'; }).join(',') + ')';
+  }
+  function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  // The bar's color at a place along it (0 to 1): what the dot is filled with
+  function colorAt(anc, p) {
+    p = Math.max(0, Math.min(1, p));
+    for (var i = 1; i < anc.length; i++) {
+      if (p <= anc[i].p || i === anc.length - 1) {
+        var a = anc[i - 1], b = anc[i], k = b.p === a.p ? 0 : Math.max(0, Math.min(1, (p - a.p) / (b.p - a.p))), x = rgb(a.c), y = rgb(b.c);
+        return 'rgb(' + [0, 1, 2].map(function (j) { return Math.round(x[j] + (y[j] - x[j]) * k); }).join(',') + ')';
+      }
+    }
+    return anc[0].c;
+  }
+  var UV_ANC = anchors([3 / UV_MAX, 6 / UV_MAX, 8 / UV_MAX, 11 / UV_MAX, 1]);
+  var AQI_ANC = anchors([50 / AQI_MAX, 100 / AQI_MAX, 150 / AQI_MAX, 200 / AQI_MAX, 1]);
 
   function url(loc, withUv) {
     return 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + loc.lat.toFixed(4) + '&longitude=' + loc.lon.toFixed(4) +
@@ -36,14 +54,16 @@
     var out = [];
     if (!data) return out;
     var uv = TV.smart.uvLevel(data.uv), aqi = TV.smart.aqiLevel(data.aqi);
-    if (uv) out.push({ id: 'uv', name: 'UV Index', lv: uv, pct: Math.min(1, data.uv / UV_MAX), track: UV_TRACK, scale: [['0', 0], ['3', 3 / UV_MAX], ['6', 6 / UV_MAX], ['8', 8 / UV_MAX], ['11+', 11 / UV_MAX]] });
-    if (aqi) out.push({ id: 'aqi', name: 'Air Quality', lv: aqi, pct: Math.min(1, data.aqi / AQI_MAX), track: AQI_TRACK, scale: [['0', 0], ['50', 50 / AQI_MAX], ['100', 100 / AQI_MAX], ['150', 150 / AQI_MAX], ['200', 200 / AQI_MAX], ['300+', 1]] });
+    if (uv) out.push({ id: 'uv', name: 'UV Index', lv: uv, pct: Math.min(1, data.uv / UV_MAX), anc: UV_ANC, scale: [['0', 0], ['3', 3 / UV_MAX], ['6', 6 / UV_MAX], ['8', 8 / UV_MAX], ['11+', 11 / UV_MAX]] });
+    if (aqi) out.push({ id: 'aqi', name: 'Air Quality', lv: aqi, pct: Math.min(1, data.aqi / AQI_MAX), anc: AQI_ANC, scale: [['0', 0], ['50', 50 / AQI_MAX], ['100', 100 / AQI_MAX], ['150', 150 / AQI_MAX], ['200', 200 / AQI_MAX], ['300+', 1]] });
     return out;
   }
 
   function gauge(r) {
-    return '<div class="gauge" style="background:' + r.track + '"><i style="left:' + (r.pct * 100).toFixed(1) + '%"></i></div>';
+    return '<div class="gauge" style="background:' + track(r.anc) + '"><i style="left:' + (r.pct * 100).toFixed(1) + '%;background:' + colorAt(r.anc, r.pct) + '"></i></div>';
   }
+
+  TV.airGauge = { anchors: anchors, colorAt: colorAt, track: track };   // for tests
 
   TV.widgets.register({
     id: 'air',

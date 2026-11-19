@@ -398,13 +398,6 @@ body.mode-light .sm-icon, body.mode-light .dsm-icon { color: #A05A00; }
 .nasa-credit { font-size: 18px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Spotify tile */
-.sp-top { display: flex; align-items: flex-start; justify-content: space-between; }
-.sp-art { width: 104px; height: 104px; border-radius: 18px; background: #333 center / cover; flex-shrink: 0; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
-.sp-state { width: 52px; height: 52px; padding: 14px; border-radius: 26px; background: var(--accent); color: #FFFFFF; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3); }
-.sp-state svg { width: 100%; height: 100%; display: block; }
-.sp-info { min-width: 0; margin-top: 12px; }
-.sp-title { font-size: 24px; line-height: 30px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sp-artist { font-size: 20px; line-height: 26px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sp-device { font-size: 18px; line-height: 24px; color: var(--accent-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sp-progress { margin-top: 10px; }
 .sp-bar { height: 6px; border-radius: 3px; background: var(--chip-strong); overflow: hidden; }
@@ -706,13 +699,6 @@ body.dense #widget-area { margin-top: var(--gap); }
 .rows-2 .nasa-title { font-size: 20px; }
 .rows-2 .nasa-credit { display: none; }
 /* Spotify: art on the left, song on the right, progress underneath */
-.rows-2 .sp-body { display: flex; align-items: center; }
-.rows-2 .sp-top { margin-right: 14px; }
-.rows-2 .sp-art { width: 64px; height: 64px; border-radius: 12px; }
-.rows-2 .sp-state { display: none; }
-.rows-2 .sp-info { flex: 1; margin-top: 0; }
-.rows-2 .sp-title { font-size: 22px; line-height: 26px; }
-.rows-2 .sp-artist { font-size: 18px; line-height: 24px; }
 .rows-2 .sp-device { display: none; }
 .rows-2 .sp-progress { margin-top: 10px; }
 .rows-2 .sp-times { display: none; }
@@ -726,8 +712,6 @@ body.dense #widget-area { margin-top: var(--gap); }
 body[data-clock-size="l"] .w-narrow .commute-time { font-size: 72px; }
 body[data-clock-size="l"] .w-narrow .commute-sub { margin-top: 2px; }
 body[data-clock-size="l"] .w-narrow .commute-updated { margin-top: 4px; }
-body[data-clock-size="l"] .w-narrow .sp-art { width: 72px; height: 72px; border-radius: 14px; }
-body[data-clock-size="l"] .w-narrow .sp-info { margin-top: 8px; }
 body[data-clock-size="l"] .w-wide .commute-time { font-size: 92px; margin-top: 0; }
 
 /* Times never wrap; with 12-hour times the compact Sun & Moon tile gives them more room */
@@ -831,7 +815,6 @@ body[data-anim="off"] *, body[data-anim="off"] *::before, body[data-anim="off"] 
 /* Colors from the album (set by js/widgets/spotify.js); without them everything uses the theme's second accent. */
 body.mode-dark { --sp-color: var(--sp-c-dark, var(--accent2)); }
 body.mode-light { --sp-color: var(--sp-c-light, var(--accent2)); }
-.sp-art { box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35), 0 0 46px var(--sp-glow, rgba(0, 0, 0, 0)), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
 .sp-fill, .player .sp-fill { background: var(--sp-color); }
 .player-art { box-shadow: 0 40px 90px rgba(0, 0, 0, 0.5), 0 0 90px var(--sp-glow, rgba(0, 0, 0, 0)), inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
 
@@ -848,25 +831,13 @@ body[data-anim="reduced"], body[data-anim="off"] { --a-eq: none; }
 @keyframes eq { from { transform: scaleY(0.2); } to { transform: scaleY(1); } }
 
 /* Two tiles wide, in the large grid: big art on the left, the song to its right, progress underneath */
-.w-wide .sp-body, .d-wide .sp-body { display: flex; align-items: center; }
-.w-wide .sp-top, .d-wide .sp-top { order: 0; margin: 0 28px 0 0; flex-shrink: 0; }
-.w-wide .sp-state, .d-wide .sp-state { display: none; }
-.w-wide .sp-art { width: 188px; height: 188px; border-radius: 28px; }
-body[data-clock-size="l"] .w-wide .sp-art { width: 164px; height: 164px; border-radius: 26px; }
 body[data-clock-size="l"] .w-wide .sp-progress { margin-top: 14px; }
-.w-wide .sp-info, .d-wide .sp-info { flex: 1; min-width: 0; margin-top: 0; }
-.w-wide .sp-title { font-size: 40px; line-height: 48px; letter-spacing: -0.5px; }
-.w-wide .sp-artist { font-size: 28px; line-height: 36px; }
 .w-wide .sp-device { font-size: 20px; line-height: 28px; margin-top: 4px; }
 .w-wide .sp-progress { margin-top: 20px; }
 .w-wide .sp-bar { height: 8px; border-radius: 4px; }
 .w-wide .sp-times { font-size: 18px; margin-top: 6px; }
 
 /* ...and in the compact grid (two rows of tiles) */
-.rows-2 .d-wide .sp-top { margin-right: 22px; }
-.rows-2 .d-wide .sp-art { width: 84px; height: 84px; border-radius: 18px; }
-.rows-2 .d-wide .sp-title { font-size: 28px; line-height: 34px; }
-.rows-2 .d-wide .sp-artist { font-size: 20px; line-height: 26px; }
 .rows-2 .d-wide .sp-device { display: none; }
 .rows-2 .d-wide .sp-progress { margin-top: 10px; }
 .rows-2 .d-wide .sp-times { display: none; }
@@ -965,7 +936,7 @@ body.mode-light .ds-ev { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
 .air-val { font-size: 34px; line-height: 38px; font-weight: 600; margin-right: 12px; font-variant-numeric: tabular-nums; }
 .air-level { min-width: 0; font-size: 22px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gauge { position: relative; height: 8px; border-radius: 4px; margin-top: 8px; }
-.gauge i { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.62), 0 2px 8px rgba(0, 0, 0, 0.4); }
+.gauge i { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; box-sizing: border-box; border-radius: 50%; border: 3px solid #FFFFFF; background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.4); }   /* the fill is the bar's color at that spot (set in air.js) */
 .w-wide .air-body { flex-direction: row; }
 .w-wide .air-row { flex: 1; margin: 0 28px 0 0; min-width: 0; }
 .w-wide .air-row:last-child { margin-right: 0; }
@@ -978,7 +949,7 @@ body.mode-light .ds-ev { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
 .air-big-level { font-size: 44px; line-height: 52px; font-weight: 700; }
 .air-big-tip { margin: 12px 0 18px; font-size: 26px; color: var(--text-2); }
 .air-big .gauge { height: 12px; border-radius: 6px; margin-top: 0; }
-.air-big .gauge i { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+.air-big .gauge i { width: 30px; height: 30px; margin: -15px 0 0 -15px; border-width: 4px; }
 .gauge-scale { position: relative; height: 28px; margin-top: 10px; font-size: 20px; line-height: 28px; color: var(--text-3); }
 .gauge-scale span { position: absolute; top: 0; white-space: nowrap; }
 
@@ -1011,7 +982,7 @@ body.mode-light .ds-ev { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
 .rows-1 .air-val { font-size: 52px; line-height: 56px; margin-right: 14px; font-weight: 300; }
 .rows-1 .air-level { font-size: 26px; }
 .rows-1 .gauge { height: 12px; border-radius: 6px; margin-top: 10px; }
-.rows-1 .gauge i { width: 20px; height: 20px; margin: -10px 0 0 -10px; }
+.rows-1 .gauge i { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
 .rows-1 .w-wide .air-body { padding-top: 18px; }
 .rows-1 .w-wide .air-row { margin-top: 0; }
 .rows-1 .w-wide .air-top { flex-wrap: wrap; }
@@ -1242,3 +1213,34 @@ body[data-anim="off"] .rd-frame, body[data-anim="reduced"] .rd-frame { transitio
 /* The narrower calendar gives titles the room: the duration chips stay in the full-screen view */
 #card-calendar .ev-dur { display: none; }
 #card-calendar .detail-cal .ev-dur, .detail-cal .ev-dur { display: block; }
+
+
+/* ======================= Spotify tile (always there): art, title, progress, and previous / play-pause / next ======================= */
+.sp2 { display: flex; align-items: center; margin-top: 4px; min-width: 0; }
+.sp2-art { position: relative; width: 96px; height: 96px; border-radius: 18px; flex-shrink: 0; margin-right: 22px; background: #333 center / cover; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.30), 0 0 40px var(--sp-glow, rgba(0, 0, 0, 0)), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.sp2-art.empty { display: flex; align-items: center; justify-content: center; background: var(--chip-strong); color: var(--text-2); box-shadow: inset 0 0 0 1.5px var(--ol); }
+.sp2-art.empty svg { width: 44px; height: 44px; display: block; }
+.sp2-main { flex: 1; min-width: 0; }
+.sp2-title { font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp2-sub { font-size: 20px; line-height: 26px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp2 .sp-progress { margin-top: 8px; }
+#widget-slots .sp2 .sp-times { display: none; }
+.sp2-controls { display: flex; align-items: center; flex-shrink: 0; margin-left: 20px; }
+.sp-btn { width: 48px; height: 48px; padding: 12px; margin-right: 12px; border-radius: 24px; flex-shrink: 0; background: var(--chip-strong); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--ol); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s ease, box-shadow 0.22s ease; }
+.sp-btn svg { width: 100%; height: 100%; display: block; }
+.sp-btn.main { width: 56px; height: 56px; padding: 15px; background: var(--accent); color: #FFFFFF; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.sp-btn.small { width: 40px; height: 40px; padding: 10px; margin-left: 4px; margin-right: 0; background: none; box-shadow: none; color: var(--text-2); }
+.sp-btn:focus { transform: scale(1.12); background: #FFFFFF; color: #000000; box-shadow: 0 0 30px var(--tint-b), 0 10px 24px rgba(0, 0, 0, 0.35); }
+body.mode-light .sp-btn:focus { background: var(--accent); color: #FFFFFF; }
+.sp-btn.main:focus { background: #FFFFFF; color: #000000; }
+body.mode-light .sp-btn.main:focus { background: #FFFFFF; color: var(--accent); box-shadow: 0 0 0 4px var(--accent), 0 10px 24px rgba(0, 0, 0, 0.35); }
+.rows-1 .sp2-art { width: 150px; height: 150px; border-radius: 26px; margin-right: 28px; }
+.rows-1 .sp2-title { font-size: 36px; line-height: 44px; }
+.rows-1 .sp2-sub { font-size: 26px; line-height: 34px; }
+.rows-1 .sp2-controls { margin-left: 28px; }
+.rows-1 .sp-btn { width: 64px; height: 64px; padding: 16px; margin-right: 16px; border-radius: 32px; }
+.rows-1 .sp-btn.main { width: 76px; height: 76px; padding: 20px; }
+.rows-1 .sp-btn.small { width: 48px; height: 48px; padding: 12px; }
+.w-narrow .sp2 { flex-wrap: wrap; }
+.w-narrow .sp2-controls { flex-basis: 100%; margin: 12px 0 0; }
+body[data-anim="off"] .sp-btn, body[data-anim="reduced"] .sp-btn { transition: none; }

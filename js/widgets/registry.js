@@ -129,9 +129,8 @@
             // Each tile takes its share of the row (a 2-column tile is exactly two tiles plus the gap between them)
             el.style.flex = '0 0 calc(' + (share * 100).toFixed(3) + '% - var(--gap))';
             // Every card can be reached with the remote; OK opens its full-screen view.
-            el.setAttribute('data-focus', '');
             el.setAttribute('data-detail', w.id);
-            el.tabIndex = 0;
+            if (!w.noFocus) { el.setAttribute('data-focus', ''); el.tabIndex = 0; }
             rowEl.appendChild(el);
           });
           slots.appendChild(rowEl);

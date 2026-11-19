@@ -6,6 +6,8 @@
   var state = null;  // last playback state
   var stateAt = 0;   // when state was fetched (ms)
   var pollTimer = null;
+  var loaded = false;   // the first answer from Spotify has arrived (so "Connecting" can become "Nothing playing")
+  var note = '';        // a short message on the tile (for example, no device to play on)
 
   function cfg() { return TV_CONFIG.spotify || {}; }
   function configured() { return !!(cfg().clientId && cfg().refreshToken); }
@@ -37,12 +39,11 @@
     return refreshAccess();
   }
 
-  function api(method, path) {
+  function api(method, path, body) {
     return getToken().then(function (token) {
-      return TV.fetchWithTimeout('https://api.spotify.com/v1' + path, {
-        method: method,
-        headers: { Authorization: 'Bearer ' + token }
-      }, 10000);
+      var o = { method: method, headers: { Authorization: 'Bearer ' + token } };
+      if (body) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
+      return TV.fetchWithTimeout('https://api.spotify.com/v1' + path, o, 10000);
     }).then(function (res) {
       if (res.status === 401) { access = null; throw new Error('Spotify sign-in expired'); }
       if (res.status === 204 || res.status === 202) return null;
@@ -60,16 +61,32 @@
       colorize();
       syncAlbum();
       stateAt = Date.now();
+      loaded = true;
       TV.widgets.update('spotify');
     }).catch(function (e) {
       TV.log('Spotify:', e.message);
+      if (!loaded) { loaded = true; note = /expired/.test(e.message) ? 'Spotify sign-in expired: run Spotify Sign-In.command again.' : 'Can\u2019t reach Spotify right now.'; TV.widgets.update('spotify'); }
     }).then(function () {
       pollTimer = setTimeout(poll, state && state.is_playing ? 5000 : 15000);
     });
   }
 
+  // Nothing is playing: wake up a device. Spotify needs a device that is open somewhere (phone, computer, speaker).
+  function startOnDevice() {
+    note = 'Starting\u2026'; TV.widgets.update('spotify');
+    api('GET', '/me/player/devices').then(function (j) {
+      var ds = (j && j.devices) || [], d = ds.filter(function (x) { return x.is_active; })[0] || ds[0];
+      if (!d) throw new Error('no device');
+      return api('PUT', '/me/player', { device_ids: [d.id], play: true });
+    }).then(function () { note = ''; setTimeout(poll, 800); })
+      .catch(function (e) {
+        note = e.message === 'no device' ? 'Open Spotify on a phone or computer first, then press play.' : 'Couldn\u2019t start playback (' + e.message + ').';
+        TV.widgets.update('spotify');
+      });
+  }
+
   function control(action) {
-    if (!state) return;
+    if (!state) { if (action === 'toggle' && configured()) startOnDevice(); return; }
     var req;
     if (action === 'toggle') req = api('PUT', state.is_playing ? '/me/player/pause' : '/me/player/play');
     else if (action === 'next') req = api('POST', '/me/player/next');
@@ -179,12 +196,23 @@
     };
   }
 
+  // The buttons on the tile (the full-screen player's own buttons are handled by detailAction)
+  document.addEventListener('click', function (e) {
+    var el = e.target;
+    while (el && el !== document && !(el.getAttribute && /^sp-/.test(el.getAttribute('data-action') || ''))) el = el.parentNode;
+    if (!el || el === document) return;
+    var a = el.getAttribute('data-action');
+    if (a === 'sp-open') TV.openDetail('spotify');
+    else control(a === 'sp-toggle' ? 'toggle' : a === 'sp-next' ? 'next' : 'prev');
+  });
+
   TV.widgets.register({
     id: 'spotify',
     name: 'Spotify Now Playing',
     // The player is two tiles wide (Settings > Layout > Wide Spotify Tile turns that off).
     span: function () { return TV.settings.prefs.spotifyWide ? 2 : 1; },
-    visible: function () { return configured() && !!state; },
+    visible: function () { return true; },   // always on screen (it explains itself when it is not connected or nothing is playing)
+    noFocus: true,                           // the card itself is not selectable: its buttons are
     init: function () {
       if (!configured()) return;
       poll();
@@ -192,29 +220,40 @@
         if (state && state.is_playing) TV.widgets.update('spotify');
       }, 1000);
     },
-    // Card: a simple "now playing" view. Press OK on it for the player.
+    // The tile: always there. Art, title, progress and three buttons (previous, play or pause, next).
+    // States: not signed in / connecting / nothing playing / playing or paused. The expand button opens the full-screen player.
     render: function (el) {
-      var info = trackInfo(state.item);
-      var key = state.item.id + '|' + state.is_playing;
+      var mode = !configured() ? 'off' : !loaded ? 'wait' : !state ? 'idle' : 'song';
+      var info = state ? trackInfo(state.item) : null;
+      var playing = !!(state && state.is_playing);
+      var key = mode + '|' + (state ? state.item.id : '') + '|' + playing + '|' + note, hadFocus = null;
       if (el.getAttribute('data-built') !== key) {
         el.setAttribute('data-built', key);
-        el.innerHTML = TV.widgetHeader('music', state.is_playing ? 'Now Playing' : 'Paused') +
-          '<span class="eq' + (state.is_playing ? '' : ' paused') + '"><i></i><i></i><i></i><i></i></span>' +
-          '<div class="sp-body">' +
-            '<div class="sp-top">' +
-              '<div class="sp-art"' + (info.art ? ' style="background-image:url(&quot;' + TV.esc(info.art) + '&quot;)"' : '') + '></div>' +
-              '<div class="sp-state">' + TV.icon(state.is_playing ? 'pause' : 'play') + '</div>' +
+        // the tile is redrawn when the song or play state changes: keep the remote on the same button
+        hadFocus = el.contains(document.activeElement) ? document.activeElement.getAttribute('data-action') : null;
+        var title, sub;
+        if (mode === 'off') { title = 'Spotify is not connected'; sub = 'On your Mac, double-click Spotify Sign-In.command, then reload.'; }
+        else if (mode === 'wait') { title = 'Connecting…'; sub = ''; }
+        else if (mode === 'idle') { title = 'Nothing playing'; sub = note || 'Press play, or start a song in Spotify.'; }
+        else { title = info.title; sub = info.artist; }
+        var art = info && info.art ? ' style="background-image:url(&quot;' + TV.esc(info.art) + '&quot;)"' : '';
+        var btn = function (action, icon, label, cls) { return '<button class="sp-btn' + (cls ? ' ' + cls : '') + '" data-focus data-action="' + action + '" aria-label="' + label + '">' + TV.icon(icon) + '</button>'; };
+        el.innerHTML = TV.widgetHeader('music', 'Spotify') +
+          (playing ? '<span class="eq"><i></i><i></i><i></i><i></i></span>' : '') +
+          '<div class="sp2">' +
+            '<div class="sp2-art' + (art ? '' : ' empty') + '"' + art + '>' + (art ? '' : TV.icon('music')) + '</div>' +
+            '<div class="sp2-main">' +
+              '<div class="sp2-title">' + TV.esc(title) + '</div>' +
+              '<div class="sp2-sub">' + TV.esc(sub) + '</div>' +
+              (mode === 'song' ? progressHtml() : '') +
             '</div>' +
-            '<div class="sp-info">' +
-              '<div class="sp-title">' + TV.esc(info.title) + '</div>' +
-              '<div class="sp-artist">' + TV.esc(info.artist) + '</div>' +
-              '<div class="sp-device">' + TV.esc(state.device ? state.device.name : '') + '</div>' +
-            '</div>' +
-          '</div>' +
-          progressHtml() +
-          '<div class="card-hint">OK for controls</div>';
+            (mode === 'off' || mode === 'wait' ? '' : '<div class="sp2-controls">' +
+              btn('sp-prev', 'prev', 'Previous') + btn('sp-toggle', playing ? 'pause' : 'play', playing ? 'Pause' : 'Play', 'main') + btn('sp-next', 'next', 'Next') +
+              (mode === 'song' ? btn('sp-open', 'expand', 'Open the full-screen player', 'small') : '') + '</div>') +
+          '</div>';
       }
-      updateProgress(el);
+      if (hadFocus) { var again = TV.$('[data-action="' + hadFocus + '"]', el); if (again) again.focus(); }
+      if (state) updateProgress(el);
     },
 
     // Full-screen player: big art and three big buttons.

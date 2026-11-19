@@ -10,7 +10,7 @@
 // Not tested on a real TV by the author, only on a computer.
 (function (TV) {
   var INDEX_URL = 'https://api.rainviewer.com/public/weather-maps.json';
-  var ZOOM = 7, ZOOM_FORECAST = 8, FRAMES = 8, STEP_MIN = 30;   // 8 pictures, 30 minutes apart: now and the next 3.5 hours
+  var ZOOM = 7, ZOOM_FORECAST = 7.5, FRAMES = 8, STEP_MIN = 30;   // 8 pictures, 30 minutes apart: now and the next 3.5 hours
   var STALE_MS = 40 * 60 * 1000;     // hide the radar when the data is older than this (a failed refresh must not leave an old picture)
   var data = null;                    // { mode: 'forecast' | 'now', host, frames: [{ time, path, minute }], key, at }
   var idx = 0, playing = true, timer = null;
