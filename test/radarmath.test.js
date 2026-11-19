@@ -72,4 +72,38 @@ check('base map: no token, nothing to build', m.baseMapUrl({ token: '', lon: 0, 
 check('the base map and the radar tiles cover the same ground (Mapbox zoom is tile zoom - 1 for 512 px tiles)', (() => { const z = 6; const mapboxWorldPx = 512 * Math.pow(2, z - 1), tileWorldPx = 256 * Math.pow(2, z); return mapboxWorldPx === tileWorldPx; })(), true);
 
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
+// ---- forecast radar (js/forecastradar.js) and the map box
+const f = require('../js/forecastradar.js');
+const bb = r.bbox(0, 0, 0, 256, 256);
+check('bbox: the whole world at zoom 0 in one 256 px picture is 40,075,016.7 m wide', Math.round(bb.maxx - bb.minx), 40075017);
+check('bbox: centered on the place (lon 0, lat 0 -> the middle is 0, 0)', [Math.round((bb.minx + bb.maxx) / 2), Math.round((bb.miny + bb.maxy) / 2)], [0, 0]);
+const b7 = r.bbox(30.2, -81.4, 7, 768, 512);
+check('bbox: the box keeps the picture shape (768 x 512)', Math.round((b7.maxx - b7.minx) / (b7.maxy - b7.miny) * 1000), 1500);
+check('bbox: one pixel at zoom 7 is 1222.99 m', Math.round((b7.maxx - b7.minx) / 768 * 100) / 100, 1222.99);
+check('bbox: west is negative for the US (lon -81.4 -> about -9.06 million m)', Math.round(((b7.minx + b7.maxx) / 2) / 1000), -9061);
+check('forecast layer names are refd_ plus four digits of minutes', [f.layerName(0), f.layerName(75), f.layerName(1080)], ['refd_0000', 'refd_0075', 'refd_1080']);
+check('forecast metadata URL', f.metaUrl(0), 'https://mesonet.agron.iastate.edu/data/gis/images/4326/hrrr/refd_0000.json');
+const mu = f.mapUrl(75, { minx: -10, miny: 20, maxx: 30, maxy: 40.5 }, 768, 512);
+check('forecast map URL: WMS 1.1.1 GetMap, transparent PNG, Web Mercator, the layer, box and size', /^https:\/\/mesonet\.agron\.iastate\.edu\/cgi-bin\/wms\/hrrr\/refd\.cgi\?SERVICE=WMS&VERSION=1\.1\.1&REQUEST=GetMap&LAYERS=refd_0075&STYLES=&SRS=EPSG:3857&FORMAT=image\/png&TRANSPARENT=true&BBOX=-10\.00,20\.00,30\.00,40\.50&WIDTH=768&HEIGHT=512$/.test(mu), true);
+check('forecast map URL: no box, no URL', f.mapUrl(0, null, 1, 1), '');
+check('forecast coverage: Florida yes, London no, Alaska no', [f.covers(30.2, -81.4), f.covers(51.5, 0), f.covers(61, -150)], [true, false, false]);
+const init = Date.parse('2026-11-19T14:00:00Z') / 1000;
+const at = (h, m) => Date.parse('2026-11-19T' + h + ':' + m + ':00Z');
+let fr = f.pickFrames(init, at('15', '20'), 8, 30);
+check('frames start at the layer valid now (run 14:00, now 15:20 -> 80 min -> the 75 min layer) and step 30 min', fr.map(x => x.minute), [75, 105, 135, 165, 195, 225, 255, 285]);
+check('each frame carries its valid time (seconds)', fr[0].time, init + 75 * 60);
+check('just after the run starts, the first frame is 0 min', f.pickFrames(init, at('14', '03'), 3, 30).map(x => x.minute), [0, 30, 60]);
+check('a now before the run (clock skew) is clamped to 0', f.pickFrames(init, at('13', '50'), 2, 30)[0].minute, 0);
+check('rounds to the nearest 15 minutes (now 14:52 is 52 min in: 3.47 quarter hours -> 45)', f.pickFrames(init, at('14', '52'), 1, 30)[0].minute, 45);
+check('the step is at least 15 minutes and in multiples of 15', f.pickFrames(init, at('14', '00'), 3, 20).map(x => x.minute), [0, 15, 30]);
+check('frames stop at 18 hours', f.pickFrames(init, at('14', '00') + 17 * 3600000, 8, 30).map(x => x.minute).slice(-1)[0] <= 1080, true);
+check('no run time, no frames', f.pickFrames(NaN, Date.now(), 8, 30), []);
+check('UTC time text is parsed', f.parseUtc('2026-11-19T14:00:00Z'), init);
+check('a bad time is NaN', Number.isNaN(f.parseUtc('nope')), true);
+const nowMs = 1000000000 * 1000;
+check('time text for the future: minutes under an hour', r.ageText(1000000000 + 25 * 60, nowMs), 'in 25 min');
+check('...hours and minutes from an hour on', r.ageText(1000000000 + 90 * 60, nowMs), 'in 1 h 30 min');
+check('...whole hours', r.ageText(1000000000 + 120 * 60, nowMs), 'in 2 h');
+check('...and the past still reads ago', r.ageText(1000000000 - 20 * 60, nowMs), '20 min ago');
+if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('All radar and map URL checks passed');

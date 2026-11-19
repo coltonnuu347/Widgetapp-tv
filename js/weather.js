@@ -92,8 +92,8 @@
     };
   }
 
-  function stat(label, value) {
-    return '<div class="wx-stat"><div class="wx-stat-label">' + label + '</div><div class="wx-stat-value">' + value + '</div></div>';
+  function stat(label, value, cls) {
+    return '<div class="wx-stat' + (cls ? ' ' + cls : '') + '"><div class="wx-stat-label">' + label + '</div><div class="wx-stat-value">' + value + '</div></div>';
   }
 
   function render(data, loc) {
@@ -108,11 +108,13 @@
       '<div class="wx-stats">' +
         (p.statHilo ? stat('High · Low', deg(data.today.max) + ' · ' + deg(data.today.min)) : '') +
         (p.statFeels ? stat('Feels Like', deg(cur.feels)) : '') +
-        (p.statHumidity ? stat('Humidity', Math.round(cur.humidity) + '%') : '') +
-        (p.statWind ? stat('Wind', Math.round(cur.wind) + ' ' + data.windUnit) : '') +
+        (p.statHumidity ? stat('Humidity', Math.round(cur.humidity) + '%', 'extra') : '') +
+        (p.statWind ? stat('Wind', Math.round(cur.wind) + ' ' + data.windUnit, 'extra') : '') +
       '</div>';
 
-    TV.$('#weather-hourly').innerHTML = hourlyHtml(data, p.hours);
+    // With the radar beside it the card is narrower, so it shows up to 8 hours (and drops Humidity and Wind, see the CSS)
+    var narrow = !!TV.$('#top-row.has-radar');
+    TV.$('#weather-hourly').innerHTML = hourlyHtml(data, narrow ? Math.min(p.hours, 8) : p.hours);
     // Brighten the temperature briefly when it changes
     var tempText = deg(cur.temp);
     if (lastTemp !== null && lastTemp !== tempText) { var t = TV.$('#weather-now .wx-temp'); if (t) TV.play(t, 'bump'); }

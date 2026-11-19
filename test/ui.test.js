@@ -22,7 +22,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   check('clock shows 24-hour time', /^\d{2}:\d{2}$/.test(await page.textContent('#clock')));
   check('calendar has events', (await page.$$('.event')).length >= 3);
   check('weather shows °F temp', /°$/.test((await page.textContent('.wx-temp')).trim()));
-  check('12 hourly entries', (await page.$$('.hr')).length === 12);
+  check('8 hourly entries (the weather card is narrower with the radar beside it)', (await page.$$('.hr')).length === 8);
   check('alert banner visible', await page.isVisible('#alert-banner'));
   check('compact grid: page 1 has 6 tiles in 2 rows (the wide Spotify tile goes on page 2)',
     (await page.$$('#widget-slots .widget')).length === 6 && (await page.$$('#widget-slots .wrow')).length === 2);
@@ -592,21 +592,21 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   // Rain radar (sample frames and drawn tiles in the preview)
   await page.evaluate(() => { TV.settings.widgets.disabled = ['sunmoon', 'wifi', 'dates', 'nasa', 'air', 'countdown', 'spotify', 'commute']; TV.widgets.layout(true); });
   await page.waitForTimeout(800);
-  const rd = await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); if (!r) return null; const m = r.querySelector('.rd-map').getBoundingClientRect(), c = r.querySelector('.rd-credit').getBoundingClientRect(); return { frames: r.querySelectorAll('.rd-frame').length, imgsPerFrame: r.querySelectorAll('.rd-frame')[0].querySelectorAll('img').length, credit: r.querySelector('.rd-credit').textContent, creditInside: c.left >= m.left && c.right <= m.right && c.top >= m.top && c.bottom <= m.bottom, dots: r.querySelectorAll('.rd-dots i').length, pin: !!r.querySelector('.rd-pin'), wide: r.classList.contains('w-wide'), over: r.scrollHeight > r.clientHeight + 1 || r.scrollWidth > r.clientWidth + 1, state: TV.radar.state() }; });
-  check('the radar widget appears with a frame for each picture (6 past + 2 forecast)', !!rd && rd.frames === 8 && rd.dots === 8 && rd.state.frames === 8, JSON.stringify(rd));
-  check('each frame uses at most 15 tiles', !!rd && rd.imgsPerFrame >= 4 && rd.imgsPerFrame <= 15, JSON.stringify(rd));
-  check('RainViewer is credited on the map, inside it', !!rd && /Weather data by RainViewer/.test(rd.credit) && rd.creditInside, JSON.stringify(rd));
-  check('the radar has a pin for your place, is a wide tile and fits', !!rd && rd.pin && rd.wide && !rd.over, JSON.stringify(rd));
+  const rd = await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); if (!r) return null; const m = r.querySelector('.rd-map').getBoundingClientRect(), c = r.querySelector('.rd-credit').getBoundingClientRect(); return { frames: r.querySelectorAll('.rd-frame').length, imgsPerFrame: r.querySelectorAll('.rd-frame')[0].querySelectorAll('img').length, credit: r.querySelector('.rd-credit').textContent, creditInside: c.left >= m.left && c.right <= m.right && c.top >= m.top && c.bottom <= m.bottom, dots: r.querySelectorAll('.rd-dots i').length, pin: !!r.querySelector('.rd-pin'), besideWeather: Math.abs(r.getBoundingClientRect().top - document.getElementById('card-weather').getBoundingClientRect().top) < 3 && r.getBoundingClientRect().left > document.getElementById('card-weather').getBoundingClientRect().right - 1, over: r.scrollHeight > r.clientHeight + 1 || r.scrollWidth > r.clientWidth + 1, state: TV.radar.state() }; });
+  check('the radar shows the future: now plus seven forecast pictures, no past ones', !!rd && rd.frames === 8 && rd.dots === 8 && rd.state.frames === 8, JSON.stringify(rd));
+  check('each forecast picture is one image', !!rd && rd.imgsPerFrame === 1, JSON.stringify(rd));
+  check('the forecast is credited on the map, inside it', !!rd && /Forecast: NOAA HRRR model/.test(rd.credit) && rd.creditInside, JSON.stringify(rd));
+  check('the radar has a pin for your place, sits beside the weather card and fits', !!rd && rd.pin && rd.besideWeather && !rd.over, JSON.stringify(rd));
   const t0 = await page.evaluate(() => TV.radar.state().idx);
   await page.waitForFunction((i) => TV.radar.state().idx !== i, t0, { timeout: 6000 }).catch(() => {});
   const t1 = await page.evaluate(() => TV.radar.state().idx);
   check('the radar loops through its frames', t1 !== t0, t0 + ' -> ' + t1);
-  check('only the current frame is visible, and the label says when it is from', await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); return r.querySelectorAll('.rd-frame.on').length === 1 && /ago|Now|in \d+ min/.test(r.querySelector('.rd-time').textContent); }));
-  check('forecast frames are labeled as forecasts', await page.evaluate(() => { TV.radar.show(7); return /forecast/.test(document.querySelector('[data-widget="radar"] .rd-time').textContent); }));
+  check('only the current frame is visible, and the label says when it is from', await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); return r.querySelectorAll('.rd-frame.on').length === 1 && /^(Now|in \d+ min|in \d+ h( \d+ min)?)$/.test(r.querySelector('.rd-time').textContent); }));
+  check('the first picture says Now, later ones say how far ahead (in 30 min ... in 3 h 30 min); none say ago', await page.evaluate(() => { const lab = () => document.querySelector('[data-widget="radar"] .rd-time').textContent; TV.radar.show(0); const a = lab(); TV.radar.show(1); const b = lab(); TV.radar.show(7); const c = lab(); return a === 'Now' && /^in \d+ min$/.test(b) && /^in \d+ h( \d+ min)?$/.test(c) && !/ago/.test(a + b + c); }));
   await page.evaluate(() => TV.setPref('anim', 'off'));
   const still0 = await page.evaluate(() => TV.radar.state().idx);
   await page.waitForTimeout(1600);
-  check('Animations Off: the radar stops looping and shows the newest picture', await page.evaluate((i) => TV.radar.state().idx === i && !/forecast/.test(document.querySelector('[data-widget="radar"] .rd-time').textContent), still0));
+  check('Animations Off: the radar stops looping and shows the newest picture', await page.evaluate((i) => TV.radar.state().idx === i && document.querySelector('[data-widget="radar"] .rd-time').textContent === 'Now', still0));
   await page.evaluate(() => TV.setPref('anim', 'full'));
   await page.evaluate(() => { TV.settings.widgets.disabled.push('radar'); TV.widgets.layout(true); });
   const hid0 = await page.evaluate(() => TV.radar.state().idx);
@@ -614,7 +614,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   check('the loop pauses while the radar is not on screen', await page.evaluate((i) => TV.radar.state().idx === i, hid0));
   await page.evaluate(() => { TV.settings.widgets.disabled = ['sunmoon', 'wifi', 'dates', 'nasa', 'air', 'countdown', 'spotify', 'commute']; TV.widgets.layout(true); document.querySelector('[data-widget="radar"]').click(); });
   await page.waitForTimeout(500);
-  check('the full-screen radar has a bigger map with play/pause and step buttons', await page.evaluate(() => { const m = document.querySelector('#sheet-detail .rd-map.big'); return !!m && m.offsetWidth > 1000 && !!document.querySelector('#sheet-detail [data-action="rd-toggle"]') && !!document.querySelector('#sheet-detail [data-action="rd-prev"]') && /RainViewer/.test(m.textContent); }));
+  check('the full-screen radar has a bigger map with play/pause and step buttons', await page.evaluate(() => { const m = document.querySelector('#sheet-detail .rd-map.big'); return !!m && m.offsetWidth > 1000 && !!document.querySelector('#sheet-detail [data-action="rd-toggle"]') && !!document.querySelector('#sheet-detail [data-action="rd-prev"]') && /NOAA HRRR/.test(m.textContent); }));
   await page.evaluate(() => { TV.radar.show(3); });
   await page.click('#sheet-detail [data-action="rd-next"]');
   check('stepping forward pauses and shows the next frame', await page.evaluate(() => TV.radar.state().idx === 4 && !TV.radar.state().playing));
@@ -625,6 +625,23 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   await page.evaluate(() => TV.closeSheet());
   const noTok = await page.evaluate(() => { const keep = [TV_CONFIG.mapboxToken, TV_CONFIG.commute.mapboxToken]; TV_CONFIG.mapboxToken = ''; TV_CONFIG.commute.mapboxToken = ''; TV.widgets.layout(true); const r = document.querySelector('[data-widget="radar"]'); const out = { plain: !!r.querySelector('.rd-plain'), note: /Mapbox token/.test(r.textContent), frames: r.querySelectorAll('.rd-frame').length }; TV_CONFIG.mapboxToken = keep[0]; TV_CONFIG.commute.mapboxToken = keep[1]; return out; });
   check('with no Mapbox token the radar still draws, on a plain backdrop with a note', noTok.plain && noTok.note && noTok.frames === 8, JSON.stringify(noTok));
+  // If the forecast service cannot be reached: one picture of the rain right now (RainViewer), never past pictures
+  await page.evaluate(() => { TV.settings.widgets.disabled = []; TV.widgets.layout(true); });
+  await page.evaluate(() => { window.__keepFetch = TV.fetchJSON; TV.fetchJSON = (u, o) => /mesonet\.agron/.test(u) ? Promise.reject(new Error('down')) : window.__keepFetch(u, o); TV.radar.reload(); });
+  await page.waitForTimeout(1200);
+  const fb = await page.evaluate(() => { const r = document.querySelector('[data-widget="radar"]'); return { frames: r.querySelectorAll('.rd-frame').length, credit: r.querySelector('.rd-credit').textContent, title: r.querySelector('.ct-text').textContent, label: r.querySelector('.rd-time').textContent, tiles: r.querySelectorAll('.rd-frame img').length }; });
+  check('without the forecast service the radar shows one picture of right now, credited to RainViewer', fb.frames === 1 && /RainViewer/.test(fb.credit) && fb.title === 'Rain Radar' && /^(Now|\d+ min ago)$/.test(fb.label) && fb.tiles >= 4, JSON.stringify(fb));
+  await page.evaluate(() => { TV.fetchJSON = window.__keepFetch; TV.radar.reload(); });
+  await page.waitForTimeout(1200);
+  check('...and the forecast comes back when the service does', await page.evaluate(() => document.querySelectorAll('[data-widget="radar"] .rd-frame').length === 8 && /NOAA/.test(document.querySelector('[data-widget="radar"] .rd-credit').textContent)));
+  // One page of widgets (the radar is beside the weather, not in the grid), and the weather widens when the radar is off
+  await page.evaluate(() => { TV.settings.widgets.disabled = ['wifi', 'dates', 'nasa', 'countdown']; TV.widgets.layout(true); });
+  const onePage = await page.evaluate(() => ({ dots: document.querySelectorAll('#widget-dots .dot').length, grid: [...document.querySelectorAll('#widget-slots .widget')].map(w => w.dataset.widget).join(','), inGrid: !!document.querySelector('#widget-slots [data-widget="radar"]') }));
+  check('all widgets are on one page, and the radar is not in the grid', onePage.dots === 0 && !onePage.inGrid && /sunmoon/.test(onePage.grid) && /spotify|air/.test(onePage.grid), JSON.stringify(onePage));
+  await page.evaluate(() => { TV.settings.widgets.disabled = ['wifi', 'dates', 'nasa', 'countdown', 'radar']; TV.widgets.layout(true); });
+  await page.waitForTimeout(300);
+  const noRadar = await page.evaluate(() => ({ hidden: document.getElementById('card-radar').classList.contains('hidden'), hours: document.querySelectorAll('.hr').length, wide: document.getElementById('card-weather').offsetWidth > 1200 }));
+  check('with the radar off, it is hidden and the weather card spans the width with 12 hours', noRadar.hidden && noRadar.hours === 12 && noRadar.wide, JSON.stringify(noRadar));
   await page.evaluate(() => { TV.settings.widgets.disabled = []; TV.widgets.layout(true); });
 
   // Depth and parallax
@@ -691,6 +708,15 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   });
   check('outside its hours the Commute tile is hidden, with "Show All Day" it appears, and off again hides it', !cw.outside && cw.always && !cw.back, JSON.stringify(cw));
   check('Settings names the commute hours, has the "Commute: Show All Day" switch, and shows the version', cw.hours && cw.row && cw.version, JSON.stringify(cw));
+  // Spotify is explained in Settings when it is not signed in
+  const sp = await page.evaluate(() => {
+    const keep = TV_CONFIG.spotify; TV_CONFIG.spotify = { clientId: '', refreshToken: '' };
+    TV.openSheet('settings'); const off = /Spotify is not signed in/.test(document.getElementById('sheet-settings').textContent) && /Spotify Sign-In\.command/.test(document.getElementById('sheet-settings').textContent); TV.closeSheet();
+    TV_CONFIG.spotify = { clientId: 'x', refreshToken: 'y' };
+    TV.openSheet('settings'); const on = !/Spotify is not signed in/.test(document.getElementById('sheet-settings').textContent); TV.closeSheet();
+    TV_CONFIG.spotify = keep; return { off, on };
+  });
+  check('Settings says when Spotify is not signed in, and names the sign-in file', sp.off && sp.on, JSON.stringify(sp));
   check('no script errors from the visual pass', errors.length === 0, errors.join(' | '));
 
 

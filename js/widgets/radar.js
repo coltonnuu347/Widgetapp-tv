@@ -1,16 +1,18 @@
-// Rain radar: a looping map of rain near you.
+// Rain radar: a looping map of the rain expected near you over the next few hours (it shows the future, not the past).
 //
-// Radar images come from RainViewer (https://www.rainviewer.com). Their free service is for personal and educational use
-// and asks for a visible credit, which is shown on the map. The base map is a Mapbox static image (it uses the same
-// Mapbox token as the commute widget); without a token the radar is drawn on a plain backdrop with range rings.
-// The frame times come from RainViewer's own index file, and the tile maths is in js/radarmath.js.
+// Forecast frames come from NOAA's HRRR weather model, served as free map pictures by the Iowa Environmental Mesonet (Iowa State
+// University), see js/forecastradar.js. It is a model forecast, not a measurement, and covers the lower 48 states. If that service
+// cannot be reached (or you are outside the US), the radar shows one picture of the rain right now from RainViewer
+// (https://www.rainviewer.com; their free service is for personal and educational use and asks for the credit shown on the map).
+// The base map is a Mapbox static image (it uses the same Mapbox token as the commute widget); without a token the radar is
+// drawn on a plain backdrop with range rings. The tile maths is in js/radarmath.js.
 //
-// Not tested against the live services by the author (only against sample data), so check it on your TV.
+// Not tested on a real TV by the author, only on a computer.
 (function (TV) {
   var INDEX_URL = 'https://api.rainviewer.com/public/weather-maps.json';
-  var ZOOM = 7, FRAMES = 6, FORECAST = 2;
+  var ZOOM = 7, ZOOM_FORECAST = 8, FRAMES = 8, STEP_MIN = 30;   // 8 pictures, 30 minutes apart: now and the next 3.5 hours
   var STALE_MS = 40 * 60 * 1000;     // hide the radar when the data is older than this (a failed refresh must not leave an old picture)
-  var data = null;                    // { host, frames: [{ time, path, forecast }], key, at }
+  var data = null;                    // { mode: 'forecast' | 'now', host, frames: [{ time, path, minute }], key, at }
   var idx = 0, playing = true, timer = null;
   var tileEl = null, detailEl = null;
 
@@ -18,17 +20,38 @@
   function isDark() { return document.body.classList.contains('mode-dark'); }
   function fresh() { return !!(data && data.frames.length && Date.now() - data.at < STALE_MS); }
   function located() { return !!(TV.location && TV.location.lat != null && TV.location.lon != null); }
-  function newestPast() { var k = -1; data.frames.forEach(function (f, i) { if (!f.forecast) k = i; }); return Math.max(0, k); }
+  function zoom() { return data && data.mode === 'forecast' ? ZOOM_FORECAST : ZOOM; }   // the forecast pictures can be drawn at any zoom, so they are closer in
+  function restIdx() { return 0; }   // the picture the loop rests on and starts from: the first one, which is "now"
+
+  // Frames of the HRRR forecast, from now on. Resolves to a data object, or rejects when the service has nothing usable.
+  function loadForecast() {
+    var fr = TV.forecastradar;
+    if (!fr || !fr.covers(TV.location.lat, TV.location.lon)) return Promise.reject(new Error('Outside the forecast area'));
+    return TV.fetchJSON(fr.metaUrl(0)).then(function (j) {
+      var init = fr.parseUtc(j && j.model_init_utc);
+      var frames = fr.pickFrames(init, Date.now(), FRAMES, STEP_MIN);
+      if (frames.length < 2) throw new Error('No forecast frames');
+      return { mode: 'forecast', frames: frames, key: 'f' + init + ':' + frames[0].minute, at: Date.now() };
+    });
+  }
+  // One picture of the rain right now (RainViewer), when the forecast is not available.
+  function loadNow() {
+    return TV.fetchJSON(INDEX_URL).then(function (j) {
+      var frames = TV.radarmath.pickFrames(j && j.radar, 1, 0);
+      if (!j || !j.host || !frames.length) throw new Error('No radar frames');
+      return { mode: 'now', host: j.host, frames: frames, key: 'n' + frames[0].time, at: Date.now() };
+    });
+  }
 
   function load() {
     if (!located()) return;
-    TV.fetchJSON(INDEX_URL).then(function (j) {
-      var frames = TV.radarmath.pickFrames(j && j.radar, FRAMES, FORECAST);
-      if (!j || !j.host || !frames.length) throw new Error('No radar frames');
-      var key = frames.map(function (f) { return f.time; }).join(',');
-      var changed = !data || data.key !== key;
-      data = { host: j.host, frames: frames, key: key, at: Date.now() };
-      if (changed) idx = newestPast();
+    loadForecast().catch(function (e) {
+      TV.log('Forecast radar unavailable:', e.message);
+      return loadNow();
+    }).then(function (d) {
+      var changed = !data || data.key !== d.key;
+      data = d;
+      if (changed) idx = restIdx();
       TV.widgets.update('radar');
     }).catch(function (e) {
       TV.log('Radar failed:', e.message);
@@ -36,19 +59,24 @@
     });
   }
 
+  function forecastSrc(frame, i, w, h) {
+    if (TV.demoForecastImage) return TV.demoForecastImage(i, w, h);
+    return TV.forecastradar.mapUrl(frame.minute, TV.radarmath.bbox(TV.location.lat, TV.location.lon, zoom(), w, h), w, h);
+  }
   function tileSrc(frame, i, t) {
     if (TV.demoRadarTile) return TV.demoRadarTile(i, t.x, t.y, ZOOM);
     return TV.radarmath.tileUrl(data.host, frame, 256, ZOOM, t.x, t.y, 2, '1_1');
   }
   function baseSrc(w, h) {
     if (token() === 'demo') return TV.demoBaseMap ? TV.demoBaseMap(isDark(), w, h) : '';
-    return TV.mapurl.baseMapUrl({ token: token(), dark: isDark(), lon: TV.location.lon, lat: TV.location.lat, z: ZOOM, width: w, height: h }) || '';
+    return TV.mapurl.baseMapUrl({ token: token(), dark: isDark(), lon: TV.location.lon, lat: TV.location.lat, z: zoom(), width: w, height: h }) || '';
   }
 
   // The map picture: a base layer, one layer per radar frame (shown one at a time), and a pin on your place.
   function canvasHtml(w, h) {
-    var g = TV.radarmath.grid(TV.location.lat, TV.location.lon, ZOOM, w, h), base = baseSrc(w, h);
+    var g = data.mode === 'forecast' ? null : TV.radarmath.grid(TV.location.lat, TV.location.lon, ZOOM, w, h), base = baseSrc(w, h);
     var frames = data.frames.map(function (f, i) {
+      if (!g) return '<div class="rd-frame" data-i="' + i + '"><img src="' + TV.esc(forecastSrc(f, i, w, h)) + '" style="left:0;top:0;width:' + w + 'px;height:' + h + 'px" alt="" draggable="false"></div>';
       return '<div class="rd-frame" data-i="' + i + '">' + g.tiles.map(function (t) {
         return '<img src="' + TV.esc(tileSrc(f, i, t)) + '" style="left:' + t.left + 'px;top:' + t.top + 'px" alt="" draggable="false">';
       }).join('') + '</div>';
@@ -58,7 +86,7 @@
       '<span class="rd-pin"></span>';
   }
   function dotsHtml() { return '<span class="rd-dots">' + data.frames.map(function (f) { return '<i></i>'; }).join('') + '</span>'; }
-  function credit() { return '<span class="rd-credit">Weather data by RainViewer</span>'; }
+  function credit() { return '<span class="rd-credit">' + (data.mode === 'forecast' ? 'Forecast: NOAA HRRR model' : 'Weather data by RainViewer') + '</span>'; }
 
   // The picture is drawn at a fixed size and scaled to fill the tile (which can be anywhere from about 600 to 1200 px wide)
   function fit(root) {
@@ -79,7 +107,8 @@
       TV.$$('.rd-frame', root).forEach(function (f, k) { f.className = 'rd-frame' + (k === idx ? ' on' : ''); });
       TV.$$('.rd-dots i', root).forEach(function (d, k) { d.className = k === idx ? 'on' : ''; });
       var lab = TV.$('.rd-time', root), f = data.frames[idx];
-      if (lab) lab.textContent = TV.radarmath.ageText(f.time, Date.now()) + (f.forecast ? ' (forecast)' : '');
+      // The first forecast picture is the one valid closest to now (within about 8 minutes either way), so it just says Now
+      if (lab) lab.textContent = data.mode === 'forecast' && idx === 0 ? 'Now' : TV.radarmath.ageText(f.time, Date.now());
     });
   }
 
@@ -92,7 +121,7 @@
       var visibleNow = (tileEl && document.body.contains(tileEl) && !document.body.classList.contains('ambient')) || (detailEl && !detailEl.hidden && document.body.contains(detailEl));
       if (visibleNow && playing && TV.motionOn()) show(idx + 1);
       schedule();
-    }, idx === newestPast() ? 1900 : 650);
+    }, idx === restIdx() ? 1900 : 650);
   }
 
   function still() { return !TV.motionOn() || !playing; }
@@ -101,24 +130,24 @@
     id: 'radar',
     name: 'Rain Radar',
     span: 2,
-    solo: true,   // sits alone on its own page, so the map gets the whole height of the panel
+    slot: 'top',   // drawn beside the weather card (see the registry and #top-row), not in the grid of tiles
     visible: function () { return fresh() && located(); },
     init: function () {
       TV.on('location', load);
       setInterval(load, 10 * 60 * 1000);
-      TV.on('prefs', function () { if (data) { if (!TV.motionOn()) idx = newestPast(); TV.widgets.update('radar'); } });
+      TV.on('prefs', function () { if (data) { if (!TV.motionOn()) idx = restIdx(); TV.widgets.update('radar'); } });
     },
     render: function (el) {
       if (!data) return;
       var key = data.key + '|' + isDark() + '|' + (token() ? 1 : 0);
       if (el.getAttribute('data-built') !== key) {
         el.setAttribute('data-built', key);
-        el.innerHTML = TV.widgetHeader('radar', 'Rain Radar') + '<span class="rd-time"></span><div class="rd-map">' + canvasHtml(768, 512) + credit() + dotsHtml() +
+        el.innerHTML = TV.widgetHeader('radar', data.mode === 'forecast' ? 'Rain Forecast' : 'Rain Radar') + '<span class="rd-time"></span><div class="rd-map">' + canvasHtml(768, 512) + credit() + dotsHtml() +
           (token() ? '' : '<span class="rd-note">Add a Mapbox token for a map</span>') + '</div>';
       }
       tileEl = el;
       fit(el);
-      show(still() ? newestPast() : idx);
+      show(still() ? restIdx() : idx);
       schedule();
     },
     detail: function (el) {
@@ -126,12 +155,12 @@
       var key = data.key + '|' + isDark() + '|' + (token() ? 1 : 0);
       if (el.getAttribute('data-built') !== key) {
         el.setAttribute('data-built', key);
-        el.innerHTML = '<h2>Rain Radar</h2><span class="rd-time"></span><div class="rd-map big">' + canvasHtml(1280, 640) + credit() + dotsHtml() + '</div>' +
+        el.innerHTML = '<h2>' + (data.mode === 'forecast' ? 'Rain Forecast' : 'Rain Radar') + '</h2><span class="rd-time"></span><div class="rd-map big">' + canvasHtml(1280, 640) + credit() + dotsHtml() + '</div>' +
           '<div class="player-controls rd-controls">' +
             '<button class="player-btn" data-focus data-action="rd-prev" aria-label="Earlier">' + TV.icon('prev') + '</button>' +
             '<button class="player-btn main" data-focus data-autofocus data-action="rd-toggle" aria-label="Play or pause">' + TV.icon(playing ? 'pause' : 'play') + '</button>' +
             '<button class="player-btn" data-focus data-action="rd-next" aria-label="Later">' + TV.icon('next') + '</button></div>' +
-          '<div class="hint">OK plays or pauses · Left and right step through the last two hours · Stronger colors mean heavier rain</div>';
+          '<div class="hint">' + (data.mode === 'forecast' ? 'OK plays or pauses · Left and right step through the next few hours · A weather-model forecast, not a measurement · Stronger colors mean heavier rain' : 'OK plays or pauses · The latest picture of the rain right now · Stronger colors mean heavier rain') + '</div>';
       }
       detailEl = el;
       fit(el);

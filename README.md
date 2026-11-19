@@ -150,8 +150,7 @@ Everything here comes from the calendar and weather the app already loads. Nothi
   The widget stays hidden until there is one.
 - **Event cards:** each event in Up Next is a card with a side bar in the calendar's color, a big start time, and a chip with how long it lasts. The event happening now has a ring that fills as it goes and shows the time left. All-day events are slim banners.
 - **Weather illustrations:** the weather icons are soft shaded drawings (sun glow, puffy clouds, drops, snowflakes, lightning) that work in Light and Dark mode. The big one in the weather panel moves very gently; Animations Reduced or Off keeps it still.
-- **Rain radar widget:** a looping map of rain near you, on a page of its own so the map is tall (it rotates in with the other pages like any widget) (last two hours, plus forecast frames when the service has them), with a pin on your place. Radar images are from **RainViewer**, whose free service is for personal and educational use and asks for a credit, which is always shown on the map. The base map is a Mapbox picture using your Mapbox token (without one, the radar is drawn on a plain backdrop). OK opens a big view: OK plays or pauses, Left and Right step through the frames. It checks for new radar every 10 minutes and hides itself if it can't get any.
-  **Not tested against the live service by the author.** One third-party source says RainViewer's free tier was restricted in 2026 (zoom limit, one color scheme, no forecast frames), which I couldn't confirm; the dashboard uses zoom 7 (twice as close as the earlier zoom 6) and works without forecast frames. In one test with a real location, RainViewer served every zoom-7 tile.
+- **Rain forecast (beside the weather):** a looping map of the rain expected over the next few hours (now, then every 30 minutes up to 3½ hours), so it shows the future, not the past. It comes from **NOAA's HRRR weather model**, served as free map pictures by the **Iowa Environmental Mesonet** (Iowa State University), and covers the lower 48 states. It is a **model forecast, not a measurement**: real rain can differ in timing and place. The base map is a Mapbox picture using your Mapbox token (without one, the forecast is drawn on a plain backdrop). If the forecast service can't be reached, or you are outside the US, it shows one picture of the rain right now from **RainViewer**, whose free service is for personal and educational use and asks for the credit shown on the map (RainViewer's free tier no longer includes a forecast, which is why the forecast comes from NOAA's model instead). It sits next to the weather card, so every widget stays on one screen. Not tested on a real TV by the author.
 - **Commute hours:** the Commute tile only shows between `showFrom` and `showUntil` in `config.local.js` (for example 06:00 to 10:00). To see it at any time, turn on **Settings → Panels → Commute: Show All Day** (or set `showUntil: '23:59'`). The version of the app you are running is shown at the bottom of Settings.
 - **Commute map:** with a Mapbox token the Commute widget also shows a small map of your route (orange line, pins A and B), and a larger one in its full-screen view. If the picture can't load, the widget stays text-only. Not tested against Mapbox by the author.
 - **Depth:** the background drifts a few pixels the opposite way to whatever you select, so the panels feel like they float in front of it (and Apps tiles lean toward the way you moved). It follows the Animations setting (Full only) and Moving Background.
@@ -315,7 +314,8 @@ the request to iCloud (a "CORS" error).
 | Weather alerts | US National Weather Service (US locations only) | Free, no key |
 | Holidays | Nager.Date | Free, no key |
 | Air quality and UV | Open-Meteo air-quality service | Free, no key |
-| Rain radar | RainViewer (weather-maps index and tiles) | Free for personal use, credit shown on screen |
+| Rain forecast | NOAA HRRR model pictures from the Iowa Environmental Mesonet (Iowa State University) | Free; a model forecast for the lower 48 states, credit shown on screen |
+| Rain radar (fallback) | RainViewer (weather-maps index and tiles) | Free for personal use, credit shown on screen; one picture of right now |
 | Maps (commute route, radar base map) | Mapbox Static Images, same token as Commute | Free token from https://account.mapbox.com |
 | Commute | Mapbox Directions with traffic | Free tier, needs a token |
 | Space photo | NASA APOD | Free, key recommended |
@@ -380,15 +380,15 @@ test/                 automated checks (not needed on the TV)
 ```bash
 TZ=America/Denver node test/ics.test.js      # calendar reader: 25 checks
 node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, day strip: 95 checks
-node test/pack.test.js                       # tile packing, incl. the double-width tiles and the radar's own page: 39 checks
+node test/pack.test.js                       # tile packing, incl. the double-width tiles and tiles with a page of their own: 39 checks
 node test/palette.test.js                    # album-art colors and the brightness cap: 12 checks
 node test/appmatch.test.js                   # the 28 services, finding them on the TV, the editor's list logic, tile readability: 59 checks
-node test/radarmath.test.js                  # radar map-tile maths, frame picking, Mapbox map URLs: 42 checks
+node test/radarmath.test.js                  # radar map-tile maths, forecast map URLs and frame times, Mapbox map URLs: 66 checks
 node test/apps-contrast.test.js              # readability of the text on the Apps page and the Edit button: 6 checks
 python3 test/serve.test.py                   # the local server and its iCloud-only calendar helper: 13 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
 node test/art.test.js                        # every built-in artwork is readable in Dark mode (same worst-case model as the themes): 8 checks
-node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow, the app editor: 202 checks
+node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow, the app editor, the radar forecast and top row: 209 checks
 ```
 
 ## Credits and license

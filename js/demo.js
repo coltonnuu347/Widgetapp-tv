@@ -57,6 +57,7 @@
       for (k = 1; k <= 3; k++) nowcast.push({ time: last + k * step, path: '/v2/radar/nowcast_' + k });
       return { version: '2.0', generated: nowSec, host: 'https://tilecache.rainviewer.com', radar: { past: past, nowcast: nowcast } };
     })()],
+    [/mesonet\.agron\.iastate\.edu/, { model_init_utc: new Date(Math.floor(nowSec / 3600) * 3600 * 1000 - 3600000).toISOString().replace('.000Z', 'Z'), forecast_minute: 0, model_forecast_utc: '' }],
     [/api\.weather\.gov/, { features: [{ properties: { event: 'Wind Advisory (sample)', severity: 'Moderate', headline: 'Sample alert for preview mode', description: 'This is sample text. On your TV this shows the full alert from the National Weather Service.', instruction: 'Sample instructions appear here.', senderName: 'NWS (sample)', ends: new Date(now.getTime() + 6 * 3600000).toISOString() } }] }],
     [/date\.nager\.at/, (function () {
       var t = TV.addDays(today, 9), y = TV.addDays(today, 30);
@@ -147,6 +148,13 @@
       return (px + r < 0 || px - r > 256 || py + r < 0 || py - r > 256) ? '' : '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="url(#g)"/>';
     }).join('');
     return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs>' + defs + '</defs>' + body + '</svg>');
+  };
+  // Preview-only forecast picture (what the forecast service would return for one frame): storm cells around the middle that drift east.
+  TV.demoForecastImage = function (frame, w, h) {
+    var cells = [[-0.34 + frame * 0.05, -0.1, 0.2], [-0.2 + frame * 0.05, 0.12, 0.15], [0.1 + frame * 0.04, -0.2, 0.15], [0.24 + frame * 0.04, 0.18, 0.18], [-0.02 + frame * 0.045, 0.02, 0.08]];
+    var defs = '<radialGradient id="g"><stop offset="0" stop-color="#ff3b30" stop-opacity="0.9"/><stop offset="0.3" stop-color="#ff9f0a" stop-opacity="0.85"/><stop offset="0.55" stop-color="#ffd60a" stop-opacity="0.7"/><stop offset="0.78" stop-color="#30d158" stop-opacity="0.6"/><stop offset="1" stop-color="#30d158" stop-opacity="0"/></radialGradient>';
+    var body = cells.map(function (c) { return '<circle cx="' + (w / 2 + c[0] * w).toFixed(1) + '" cy="' + (h / 2 + c[1] * h).toFixed(1) + '" r="' + (c[2] * w).toFixed(1) + '" fill="url(#g)"/>'; }).join('');
+    return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><defs>' + defs + '</defs>' + body + '</svg>');
   };
   // A drawn stand-in for the base map: land with a coastline and a few roads.
   TV.demoBaseMap = function (dark, w, h) {

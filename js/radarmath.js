@@ -27,6 +27,15 @@
     return { fx: fx, fy: fy, tiles: tiles };
   }
 
+  // The ground a w x h picture centered on (lat, lon) at tile zoom z covers, in Web Mercator meters (EPSG:3857), for a map-image request
+  // (WMS BBOX). It is the same ground the Mapbox base map and the radar tile grid cover: one tile pixel is 2*pi*R / (256 * 2^z) meters.
+  function bbox(lat, lon, z, w, h) {
+    var R = 6378137, d = Math.PI / 180;
+    var cx = R * lon * d, cy = R * Math.log(Math.tan(Math.PI / 4 + lat * d / 2));
+    var res = 2 * Math.PI * R / (TILE * Math.pow(2, z));
+    return { minx: cx - w / 2 * res, miny: cy - h / 2 * res, maxx: cx + w / 2 * res, maxy: cy + h / 2 * res };
+  }
+
   // radar: the "radar" object of RainViewer's weather-maps.json: { past: [{ time, path }], nowcast: [{ time, path }] }.
   // Picks `count` frames from the past (evenly spread, ending with the newest) and, if asked, up to `forecast` nowcast frames.
   function pickFrames(radar, count, forecast) {
@@ -52,13 +61,13 @@
   function ageText(frameSec, nowMs) {
     var m = Math.round((nowMs / 1000 - frameSec) / 60);
     if (Math.abs(m) < 5) return 'Now';
-    if (m < 0) return 'in ' + (-m) + ' min';
+    if (m < 0) { var f = -m; return f < 60 ? 'in ' + f + ' min' : 'in ' + Math.floor(f / 60) + ' h' + (f % 60 ? ' ' + (f % 60) + ' min' : ''); }
     if (m < 60) return m + ' min ago';
     var h = Math.floor(m / 60), r = m % 60;
     return h + ' h' + (r ? ' ' + r + ' min' : '') + ' ago';
   }
 
-  var api = { TILE: TILE, tileX: tileX, tileY: tileY, grid: grid, pickFrames: pickFrames, tileUrl: tileUrl, ageText: ageText };
+  var api = { TILE: TILE, tileX: tileX, tileY: tileY, grid: grid, bbox: bbox, pickFrames: pickFrames, tileUrl: tileUrl, ageText: ageText };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else { root.TV = root.TV || {}; root.TV.radarmath = api; }
 })(typeof window !== 'undefined' ? window : this);

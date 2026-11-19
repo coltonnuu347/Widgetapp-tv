@@ -80,7 +80,9 @@
         '<button class="btn icon-btn" data-focus data-action="w-down" data-value="' + w.id + '"' + (i === arr.length - 1 ? ' disabled' : '') + '>' + TV.icon('down') + '</button>' +
         '</div>';
     });
-    html += '</div><div class="hint">Widgets without setup (Wi-Fi, Commute, Spotify) stay hidden until you add their info to config.local.js. Commute only shows during your commute hours (' + TV.esc((TV_CONFIG.commute || {}).showFrom || 'any time') + ' to ' + TV.esc((TV_CONFIG.commute || {}).showUntil || 'any time') + ' in config.local.js) unless Settings > Panels > Commute: Show All Day is on.</div>';
+    var sp = TV_CONFIG.spotify || {};
+    var spotifyNote = (sp.clientId && sp.refreshToken) ? '' : ' <b>Spotify is not signed in</b>: on your Mac, double-click Spotify Sign-In.command in the app folder (needs Node.js and Spotify Premium; steps in the README), then reload. Its tile also only shows while something is playing.';
+    html += '</div><div class="hint">Widgets without setup (Wi-Fi, Commute, Spotify) stay hidden until you add their info to config.local.js. Commute only shows during your commute hours (' + TV.esc((TV_CONFIG.commute || {}).showFrom || 'any time') + ' to ' + TV.esc((TV_CONFIG.commute || {}).showUntil || 'any time') + ' in config.local.js) unless Settings > Panels > Commute: Show All Day is on.' + spotifyNote + '</div>';
     return html;
   }
 

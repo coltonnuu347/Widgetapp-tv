@@ -158,7 +158,7 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 }
 #hero { height: 240px; flex-shrink: 0; display: flex; align-items: flex-start; }
 #panels { flex: 1; min-height: 0; display: flex; margin-top: 24px; }
-#card-calendar { width: 540px; flex-shrink: 0; margin-right: var(--gap); display: flex; flex-direction: column; }
+#card-calendar { width: 456px; flex-shrink: 0; margin-right: var(--gap); display: flex; flex-direction: column; }
 #right-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 /* ======================= Glass material ======================= */
@@ -1211,3 +1211,34 @@ body[data-anim="off"] .rd-frame, body[data-anim="reduced"] .rd-frame { transitio
 #apps-head::before, #apps-foot::before { content: ""; position: absolute; z-index: -1; pointer-events: none; left: -60px; right: -60px; background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--clock-vignette) 35%, var(--clock-vignette) 65%, rgba(0, 0, 0, 0)); }
 #apps-head::before { top: -60px; bottom: -60px; }
 #apps-foot::before { top: -40px; bottom: -34px; }
+
+
+/* ======================= Top row: the weather and the rain radar side by side ======================= */
+#top-row { display: flex; flex-shrink: 0; height: 282px; }
+#top-row #card-weather { flex: 1; min-width: 0; height: 100%; padding: 16px 32px 8px; }
+#top-row #card-radar { flex: 0 0 424px; width: 424px; height: 100%; margin: 0 0 0 var(--gap); padding: 16px 24px; border-radius: var(--r-panel); }
+#top-row #card-radar.hidden { display: none !important; }
+#top-row #weather-now { height: 84px; }
+#top-row .wx-temp { font-size: 84px; }
+#top-row .wx-icon-big { width: 80px; height: 80px; margin: 0 20px 0 18px; }
+#top-row .wx-cond { font-size: 30px; }
+#top-row .wx-place { font-size: 20px; margin-top: 4px; }
+#top-row .wx-stat-value { font-size: 24px; margin-top: 4px; }
+#top-row .wx-stat-label { font-size: 17px; }
+#top-row .wx-stats { margin-left: 8px; }
+#top-row .wx-stat { padding: 0 18px; }
+#top-row.has-radar .wx-stat.extra { display: none; }
+#top-row #weather-hourly { margin-top: 6px; padding-top: 8px; }
+#top-row .hr-head { padding: 4px 0 2px; }
+#top-row .hr-time { line-height: 24px; }
+#top-row .hr-icon { width: 34px; height: 34px; }
+#top-row .hr-pop { height: 18px; line-height: 18px; font-size: 18px; }
+#top-row #card-radar .card-title { font-size: 20px; margin-bottom: 8px; }
+#top-row #card-radar .badge { width: 30px; height: 30px; border-radius: 15px; padding: 7px; margin-right: 10px; }
+#top-row #card-radar .badge .icon { width: 16px; height: 16px; }
+#top-row #card-radar .rd-map { top: 56px; left: 16px; right: 16px; bottom: 16px; }
+#widget-area { margin-top: var(--gap); }
+#top-row #card-radar .rd-time { top: 16px; right: 24px; font-size: 20px; line-height: 26px; }
+/* The narrower calendar gives titles the room: the duration chips stay in the full-screen view */
+#card-calendar .ev-dur { display: none; }
+#card-calendar .detail-cal .ev-dur, .detail-cal .ev-dur { display: block; }

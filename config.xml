@@ -19,6 +19,7 @@
     <access origin="https://workers.dev" subdomains="true"/>
     <access origin="https://open-meteo.com" subdomains="true"/>
     <access origin="https://rainviewer.com" subdomains="true"/>
+    <access origin="https://mesonet.agron.iastate.edu"/>
     <access origin="https://weather.gov" subdomains="true"/>
     <access origin="https://ipapi.co" subdomains="true"/>
     <access origin="https://geojs.io" subdomains="true"/>

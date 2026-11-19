@@ -66,10 +66,13 @@
         </section>
 
         <div id="right-col">
-          <section class="card" id="card-weather" data-focus data-detail="weather" tabindex="0">
-            <div id="weather-now"></div>
-            <div id="weather-hourly" class="hourly"></div>
-          </section>
+          <div id="top-row">
+            <section class="card" id="card-weather" data-focus data-detail="weather" tabindex="0">
+              <div id="weather-now"></div>
+              <div id="weather-hourly" class="hourly"></div>
+            </section>
+            <section class="card widget widget-radar hidden" id="card-radar" data-widget="radar" data-focus data-detail="radar" tabindex="0"></section>
+          </div>
 
           <section id="widget-area">
             <div id="widget-slots"></div>
@@ -119,6 +122,7 @@
   <script src="js/palette.js"></script>
   <script src="js/mapurl.js"></script>
   <script src="js/radarmath.js"></script>
+  <script src="js/forecastradar.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/art.js"></script>
   <script src="js/themes.js"></script>

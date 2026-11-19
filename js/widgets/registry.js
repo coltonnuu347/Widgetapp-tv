@@ -7,12 +7,13 @@
 (function (TV) {
   var GRIDS = { large: { cols: 3, rows: 1 }, medium: { cols: 2, rows: 2 }, compact: { cols: 3, rows: 2 } };
 
+  function safeVisible(w) { try { return w.visible(); } catch (e) { return false; } }
   function spanOf(w) { return typeof w.span === 'function' ? w.span() : (w.span || 1); }
 
   // What goes where: { dense, pages: [ [row, row], ... ] } where each row is a list of { w, span }.
   function plan() {
     var g = GRIDS[TV.settings.prefs.density] || GRIDS.compact;
-    var res = TV.pack.pack(TV.widgets.visible().map(function (w) { return { w: w, span: spanOf(w), solo: !!w.solo }; }), g.cols, g.rows);
+    var res = TV.pack.pack(TV.widgets.visible().filter(function (w) { return !w.slot; }).map(function (w) { return { w: w, span: spanOf(w), solo: !!w.solo }; }), g.cols, g.rows);
     return {
       dense: res.dense,
       pages: res.pages.map(function (rows) {
@@ -26,6 +27,7 @@
   var lastSig = '';
   var list = [];
   var current = []; // widgets on screen now
+  var tops = [];    // widgets with slot: 'top' (the rain radar) that are showing beside the weather: they are not in the grid
 
   TV.widgets = {
     register: function (w) {
@@ -94,8 +96,20 @@
         dots.innerHTML = h;
       } else dots.innerHTML = '';
 
+      // Widgets with a slot of their own (the radar, beside the weather) are drawn there, whatever the grid does
+      var topWanted = list.filter(function (w) { return w.slot === 'top' && TV.widgets.isEnabled(w) && safeVisible(w); });
+      var topChanged = topWanted.length !== tops.length || topWanted.some(function (w, i) { return tops[i] !== w; });
+      tops = topWanted;
+      var topEl = TV.$('#card-radar');
+      if (topEl) {
+        topEl.classList.toggle('hidden', !tops.length);
+        var row = TV.$('#top-row'), had = row.classList.contains('has-radar');
+        row.classList.toggle('has-radar', !!tops.length);
+        if (had !== !!tops.length && TV.rerenderWeather) TV.rerenderWeather();   // the weather card is narrower beside the radar
+      }
       var slots = TV.$('#widget-slots');
-      if (force || sig !== lastSig) {
+      if (force || sig !== lastSig || topChanged) {
+        if (topEl) tops.forEach(function (w) { TV.widgets.renderOne(w, topEl); });
         var focused = slots.contains(document.activeElement) ? document.activeElement.getAttribute('data-widget') : null;
         document.body.classList.toggle('dense', pl.dense);
         slots.innerHTML = '';
@@ -125,7 +139,7 @@
         onPage.forEach(function (w) {
           TV.widgets.renderOne(w, TV.$('[data-widget="' + w.id + '"]', slots));
         });
-        current = onPage;
+        current = onPage.concat(tops);
         lastSig = sig;
         if (focused) {
           var again = TV.$('[data-widget="' + focused + '"]', slots);
