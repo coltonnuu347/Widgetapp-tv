@@ -15,6 +15,7 @@
     return m ? (+m[1]) * 60 + (+m[2]) : null;
   }
   function inWindow() {
+    if (TV.settings.prefs.commuteAlways) return true;   // Settings > Panels > Commute: Show All Day
     var c = cfg(), from = minutesOf(c.showFrom), until = minutesOf(c.showUntil);
     if (from === null || until === null) return true;
     var now = new Date(), cur = now.getHours() * 60 + now.getMinutes();
@@ -89,7 +90,9 @@
       if (!configured()) return;
       refresh();
       setInterval(refresh, 10 * 60 * 1000);
-      TV.on('prefs', function () { TV.widgets.update('commute'); });
+      // Fetch as soon as the tile is meant to show (the commute hours begin, or "Show All Day" is turned on), not at the next 10-minute tick
+      setInterval(function () { if (!result && inWindow()) refresh(); }, 60 * 1000);
+      TV.on('prefs', function () { if (!result && inWindow()) refresh(); else TV.widgets.update('commute'); });
     },
     render: function (el) {
       var c = cfg(), body, url = '';

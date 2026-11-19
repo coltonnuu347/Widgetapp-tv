@@ -673,6 +673,24 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   await page.evaluate(() => TV.pager.go('home'));
   await page.waitForTimeout(600);
   check('leaving the Apps page clears the wash', await page.evaluate(() => document.querySelectorAll('#apps-wash i.on').length === 0));
+  // Commute hours, and the "show all day" switch
+  const cw = await page.evaluate(() => {
+    const hh = n => String(((new Date().getHours() + n) % 24 + 24) % 24).padStart(2, '0') + ':00';
+    const keep = [TV_CONFIG.commute.showFrom, TV_CONFIG.commute.showUntil];
+    TV_CONFIG.commute.showFrom = hh(2); TV_CONFIG.commute.showUntil = hh(3);
+    const outside = TV.widgets.visible().some(w => w.id === 'commute');
+    TV.setPref('commuteAlways', true);
+    const always = TV.widgets.visible().some(w => w.id === 'commute');
+    TV.setPref('commuteAlways', false);
+    const back = TV.widgets.visible().some(w => w.id === 'commute');
+    TV.openSheet('settings');
+    const t = document.getElementById('sheet-settings').textContent;
+    const out = { outside, always, back, hours: t.indexOf(TV_CONFIG.commute.showFrom + ' to ' + TV_CONFIG.commute.showUntil) >= 0, row: /Commute: Show All Day/.test(t), version: /Version 20\d\d-\d\d-\d\d/.test(t) };
+    TV.closeSheet(); TV_CONFIG.commute.showFrom = keep[0]; TV_CONFIG.commute.showUntil = keep[1];
+    return out;
+  });
+  check('outside its hours the Commute tile is hidden, with "Show All Day" it appears, and off again hides it', !cw.outside && cw.always && !cw.back, JSON.stringify(cw));
+  check('Settings names the commute hours, has the "Commute: Show All Day" switch, and shows the version', cw.hours && cw.row && cw.version, JSON.stringify(cw));
   check('no script errors from the visual pass', errors.length === 0, errors.join(' | '));
 
 

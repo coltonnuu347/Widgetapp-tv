@@ -80,7 +80,7 @@
         '<button class="btn icon-btn" data-focus data-action="w-down" data-value="' + w.id + '"' + (i === arr.length - 1 ? ' disabled' : '') + '>' + TV.icon('down') + '</button>' +
         '</div>';
     });
-    html += '</div><div class="hint">Widgets without setup (Wi-Fi, Commute, Spotify) stay hidden until you add their info to config.local.js. Commute only shows during your commute hours.</div>';
+    html += '</div><div class="hint">Widgets without setup (Wi-Fi, Commute, Spotify) stay hidden until you add their info to config.local.js. Commute only shows during your commute hours (' + TV.esc((TV_CONFIG.commute || {}).showFrom || 'any time') + ' to ' + TV.esc((TV_CONFIG.commute || {}).showUntil || 'any time') + ' in config.local.js) unless Settings > Panels > Commute: Show All Day is on.</div>';
     return html;
   }
 
@@ -102,7 +102,7 @@
     TV.$('#sheet-settings').innerHTML = '<h2>Settings</h2>' +
       (message ? '<div class="message">' + TV.esc(message) + '</div>' : '') +
       prefsSections() + widgetsSection() + appsSection() + calendarsSection() + locationSection() +
-      '<div class="hint footer-hint">Remote: arrows to move · OK to select · Back to close · Yellow = Theme · Blue = Settings</div>';
+      '<div class="hint footer-hint">Remote: arrows to move · OK to select · Back to close · Yellow = Theme · Blue = Settings · Version ' + TV.VERSION + '</div>';
     // Keep focus on the same control after redrawing.
     if (focusedAction && focusedAction[0]) {
       var sel = '[data-action="' + focusedAction[0] + '"]' + (focusedAction[1] ? '[data-value="' + focusedAction[1].replace(/"/g, '\\"') + '"]' : '');

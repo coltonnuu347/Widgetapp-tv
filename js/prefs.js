@@ -28,7 +28,8 @@
       { key: 'statHilo', label: 'Weather: High · Low', toggle: true },
       { key: 'statFeels', label: 'Weather: Feels Like', toggle: true },
       { key: 'statHumidity', label: 'Weather: Humidity', toggle: true },
-      { key: 'statWind', label: 'Weather: Wind', toggle: true }
+      { key: 'statWind', label: 'Weather: Wind', toggle: true },
+      { key: 'commuteAlways', label: 'Commute: Show All Day', toggle: true }
     ] },
     { title: 'Smart & Motion', rows: [
       { key: 'anim', label: 'Animations', options: [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']] },

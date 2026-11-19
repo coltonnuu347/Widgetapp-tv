@@ -3,6 +3,7 @@
   var KEY = 'tvdash.settings.v1';
 
   // Starting values for everything under Settings > Clock, Layout, Glass & Outlines, Panels.
+  TV.VERSION = '2026-11-19 b (serve.py, radar page, Commute all-day option)';   // shown at the bottom of Settings, so you can tell which copy is running
   TV.PREF_DEFAULTS = {
     clockStyle: 'thin', clockSize: 'm', hour12: false, seconds: false,
     density: 'compact', calSide: 'left',
@@ -10,7 +11,7 @@
     calDays: Math.max(1, TV_CONFIG.calendarDays || 7), hours: 12, unit: 'F',
     statHilo: true, statFeels: true, statHumidity: true, statWind: true,
     anim: 'full', greeting: true, nightDim: true,
-    spotifyWide: true,
+    spotifyWide: true, commuteAlways: false,
     albumBg: true, wxfx: true, ambient: 10
   };
 
