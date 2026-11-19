@@ -71,6 +71,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         # A page loaded from another address (for example the TV) may use this proxy
         self.send_header('Access-Control-Allow-Origin', '*')
+        # Never reuse an old copy: after an update the browser could otherwise mix old and new files (old weather code with a new layout)
+        if 'Cache-Control' not in (self._headers_buffer and b''.join(self._headers_buffer).decode('latin-1') or ''):
+            self.send_header('Cache-Control', 'no-store, max-age=0')
         super().end_headers()
 
 

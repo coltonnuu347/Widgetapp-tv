@@ -105,7 +105,9 @@
         topEl.classList.toggle('hidden', !tops.length);
         var row = TV.$('#top-row'), had = row.classList.contains('has-radar');
         row.classList.toggle('has-radar', !!tops.length);
-        if (had !== !!tops.length && TV.rerenderWeather) TV.rerenderWeather();   // the weather card is narrower beside the radar
+        if (had !== !!tops.length && TV.rerenderWeather) {
+          try { TV.rerenderWeather(); } catch (e) { console.error('Weather redraw failed', e); }   // the weather card is narrower beside the radar
+        }
       }
       var slots = TV.$('#widget-slots');
       if (force || sig !== lastSig || topChanged) {
@@ -161,7 +163,11 @@
     },
 
     renderOne: function (w, el) {
-      try { w.render(el); } catch (e) { console.error('Widget ' + w.id + ' failed', e); }
+      try { w.render(el); } catch (e) {
+        console.error('Widget ' + w.id + ' failed', e);
+        // say so on the tile, instead of leaving it blank
+        if (el && !el.firstChild) el.innerHTML = '<div class="empty-note">' + TV.esc(w.name || w.id) + ' could not be drawn: ' + TV.esc(e && e.message ? e.message : 'unknown error') + '</div>';
+      }
     },
 
     refreshAll: function () {

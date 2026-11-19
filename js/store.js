@@ -3,7 +3,7 @@
   var KEY = 'tvdash.settings.v1';
 
   // Starting values for everything under Settings > Clock, Layout, Glass & Outlines, Panels.
-  TV.VERSION = '2026-11-19 b (serve.py, radar page, Commute all-day option)';   // shown at the bottom of Settings, so you can tell which copy is running
+  TV.VERSION = '2026-11-19 c (radar forecast beside the weather, no-cache server)';   // shown at the bottom of Settings, so you can tell which copy is running
   TV.PREF_DEFAULTS = {
     clockStyle: 'thin', clockSize: 'm', hour12: false, seconds: false,
     density: 'compact', calSide: 'left',

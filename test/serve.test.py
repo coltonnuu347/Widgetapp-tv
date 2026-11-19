@@ -56,6 +56,12 @@ s, body = get('/calproxy?url=' + urllib.parse.quote('https://example.com/x', saf
 check('/calproxy refuses a host that is not icloud.com (403)', s == 403, s)
 s, body = get('/calproxy')
 check('/calproxy with no address is refused (403)', s == 403, s)
+req = urllib.request.urlopen(base + '/index.html', timeout=10)
+check('files are served with Cache-Control: no-store (no stale mixes after an update)', 'no-store' in (req.headers.get('Cache-Control') or ''), req.headers.get('Cache-Control'))
+req.close()
+req = urllib.request.urlopen(base + '/js/apps.js', timeout=10)
+check('...JavaScript too', 'no-store' in (req.headers.get('Cache-Control') or ''), req.headers.get('Cache-Control'))
+req.close()
 srv.shutdown()
 
 if failed:

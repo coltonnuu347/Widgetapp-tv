@@ -385,7 +385,7 @@ node test/palette.test.js                    # album-art colors and the brightne
 node test/appmatch.test.js                   # the 28 services, finding them on the TV, the editor's list logic, tile readability: 59 checks
 node test/radarmath.test.js                  # radar map-tile maths, forecast map URLs and frame times, Mapbox map URLs: 66 checks
 node test/apps-contrast.test.js              # readability of the text on the Apps page and the Edit button: 6 checks
-python3 test/serve.test.py                   # the local server and its iCloud-only calendar helper: 13 checks
+python3 test/serve.test.py                   # the local server, its iCloud-only calendar helper and no-cache headers: 15 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
 node test/art.test.js                        # every built-in artwork is readable in Dark mode (same worst-case model as the themes): 8 checks
 node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow, the app editor, the radar forecast and top row: 209 checks
