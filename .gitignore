@@ -7,3 +7,4 @@ spotify.local.js
 node_modules/
 *.zip
 *.log
+__pycache__/

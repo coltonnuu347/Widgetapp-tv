@@ -1,6 +1,6 @@
 #!/bin/bash
 # Double-click this on your Mac to see the dashboard on your TV right now, with nothing to install on the TV.
-# It starts a small web server on your Mac; you open the address it prints in the TV's Internet (browser) app.
+# It starts a small web server on your Mac (tools/serve.py, which also fetches your iCloud calendar for the page); you open the address it prints in the TV's Internet (browser) app.
 # Limits: the Mac has to stay on, the TV browser shows its own bars, and apps cannot be opened from a browser
 # (that part needs the real install, see README). Use it on your home Wi-Fi only: anyone on the same network
 # could read the files, including config.local.js.
@@ -21,4 +21,4 @@ echo
 echo "  Want to see it with sample data instead of your own? Add ?demo=1 at the end."
 echo "  Keep this window open. Close it (or press Control-C) to stop."
 echo
-python3 -m http.server $PORT
+python3 tools/serve.py $PORT

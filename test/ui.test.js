@@ -575,6 +575,7 @@ const check = (name, cond, extra) => { console.log((cond ? 'PASS ' : 'FAIL ') + 
   check('the commute tile shows a map of the route next to the drive time', !!cm && cm.hasMap && /data:image\/svg/.test(cm.bg) && cm.time && !cm.over, JSON.stringify(cm));
   const urls = [];
   page.on('request', r => { if (/api\.mapbox\.com\/styles/.test(r.url())) urls.push(r.url()); });
+  await page.route(/api\.mapbox\.com\/styles/, r => r.abort());   // the picture must fail to load, whatever the network does
   await page.evaluate(() => {
     TV_CONFIG.commute.mapboxToken = 'pk.test-token';
     TV.widgets.update('commute'); TV.widgets.layout(true);

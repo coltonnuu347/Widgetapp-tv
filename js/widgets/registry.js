@@ -12,7 +12,7 @@
   // What goes where: { dense, pages: [ [row, row], ... ] } where each row is a list of { w, span }.
   function plan() {
     var g = GRIDS[TV.settings.prefs.density] || GRIDS.compact;
-    var res = TV.pack.pack(TV.widgets.visible().map(function (w) { return { w: w, span: spanOf(w) }; }), g.cols, g.rows);
+    var res = TV.pack.pack(TV.widgets.visible().map(function (w) { return { w: w, span: spanOf(w), solo: !!w.solo }; }), g.cols, g.rows);
     return {
       dense: res.dense,
       pages: res.pages.map(function (rows) {

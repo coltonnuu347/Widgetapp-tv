@@ -8,7 +8,7 @@
 // Not tested against the live services by the author (only against sample data), so check it on your TV.
 (function (TV) {
   var INDEX_URL = 'https://api.rainviewer.com/public/weather-maps.json';
-  var ZOOM = 6, FRAMES = 6, FORECAST = 2;
+  var ZOOM = 7, FRAMES = 6, FORECAST = 2;
   var STALE_MS = 40 * 60 * 1000;     // hide the radar when the data is older than this (a failed refresh must not leave an old picture)
   var data = null;                    // { host, frames: [{ time, path, forecast }], key, at }
   var idx = 0, playing = true, timer = null;
@@ -101,6 +101,7 @@
     id: 'radar',
     name: 'Rain Radar',
     span: 2,
+    solo: true,   // sits alone on its own page, so the map gets the whole height of the panel
     visible: function () { return fresh() && located(); },
     init: function () {
       TV.on('location', load);

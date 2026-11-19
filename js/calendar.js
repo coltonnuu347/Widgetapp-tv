@@ -17,12 +17,28 @@
     return proxy ? proxy + encodeURIComponent(url) : url;
   }
 
-  function loadOne(cal, index) {
-    var url = toHttps(cal.url);
-    return TV.fetchWithTimeout(fetchUrl(url), { cache: 'no-store' }, 20000).then(function (res) {
+  // Opened from tools/serve.py (the Mac preview), the page can ask that server for the calendar: browsers refuse to read iCloud directly.
+  function localProxyUrl(url) {
+    return /^https?:$/.test(location.protocol) && !(TV_CONFIG.corsProxy || '').trim() ? '/calproxy?url=' + encodeURIComponent(url) : '';
+  }
+  function getCalendarText(url) {
+    function direct() {
+      return TV.fetchWithTimeout(fetchUrl(url), { cache: 'no-store' }, 20000).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      });
+    }
+    var local = localProxyUrl(url);
+    if (!local) return direct();
+    return TV.fetchWithTimeout(local, { cache: 'no-store' }, 25000).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.text();
-    }).then(function (text) {
+    }).catch(function () { return direct(); });   // not this server (or it could not reach iCloud): try the normal way
+  }
+
+  function loadOne(cal, index) {
+    var url = toHttps(cal.url);
+    return getCalendarText(url).then(function (text) {
       if (text.indexOf('BEGIN:VCALENDAR') < 0) throw new Error('Not a calendar file');
       var parsed = TV.ics.parse(text);
       var name = cal.name || parsed.name || 'Calendar';

@@ -52,5 +52,15 @@ for (const g of [COMPACT, LARGE, MEDIUM]) {
 const wide = pack(items('a b s(2) c d s2(2) e'), 3, 2);
 check('no row exceeds 3 columns', wide.pages.every(p => p.every(row => row.reduce((s, c) => s + c.span, 0) <= 3)), true);
 
+// solo tiles (the rain radar) get a page of their own
+const solo = (spec, g) => pack(items(spec).map(it => ({ ...it, solo: it.id === 'r' })), g[0], g[1]);
+check('a solo tile gets its own page, after the others', show(solo('a b r', COMPACT)), 'a b | r');
+check('...and the others are packed as usual (not dense: 2 tiles)', solo('a b r', COMPACT).dense, false);
+check('a solo tile keeps its width (2) on its page', show(solo('a b r(2)', COMPACT)), 'a b | r(2)');
+check('others still split into dense pages around a solo tile', show(solo('a b c d r', COMPACT)), 'a b / c d | r');
+check('...and that layout is dense', solo('a b c d r', COMPACT).dense, true);
+check('a solo tile on its own is one page', show(solo('r', COMPACT)), 'r');
+check('a solo tile is one row per page on every grid', [MEDIUM, LARGE, COMPACT].map(g => solo('a b c r', g).pages.slice(-1)[0].length), [1, 1, 1]);
+
 if (failed) { console.log(failed + ' FAILED'); process.exit(1); }
 console.log('All tile-packing checks passed');

@@ -20,10 +20,10 @@ It shows:
 
 ## Try it on your Mac first (no setup)
 
-Open Terminal in this folder and run:
+Open Terminal **in this folder** (type `cd `, drag the folder from Finder into the Terminal window, press Return; `ls` should list `index.html`) and run:
 
 ```bash
-python3 -m http.server 8765
+python3 tools/serve.py
 ```
 
 Then open **http://localhost:8765/index.html?demo=1** in Safari or Chrome. Preview mode fills
@@ -31,7 +31,7 @@ everything with **sample data** (it says so at the bottom of the screen). Use th
 Return (OK) and Esc (Back) to act like the TV remote.
 
 Without `?demo=1`, it uses your real settings from `config.local.js` (copy `config.local.example.js` to
-`config.local.js` first, see below).
+`config.local.js` first, see below). `tools/serve.py` is a small server that also fetches your iCloud calendar for the page (browsers refuse to read iCloud directly, which otherwise shows "Couldn't load … Failed to fetch"); it only ever fetches icloud.com addresses.
 
 ## Using it with the remote
 
@@ -150,8 +150,8 @@ Everything here comes from the calendar and weather the app already loads. Nothi
   The widget stays hidden until there is one.
 - **Event cards:** each event in Up Next is a card with a side bar in the calendar's color, a big start time, and a chip with how long it lasts. The event happening now has a ring that fills as it goes and shows the time left. All-day events are slim banners.
 - **Weather illustrations:** the weather icons are soft shaded drawings (sun glow, puffy clouds, drops, snowflakes, lightning) that work in Light and Dark mode. The big one in the weather panel moves very gently; Animations Reduced or Off keeps it still.
-- **Rain radar widget:** a looping map of rain near you (last two hours, plus forecast frames when the service has them), with a pin on your place. Radar images are from **RainViewer**, whose free service is for personal and educational use and asks for a credit, which is always shown on the map. The base map is a Mapbox picture using your Mapbox token (without one, the radar is drawn on a plain backdrop). OK opens a big view: OK plays or pauses, Left and Right step through the frames. It checks for new radar every 10 minutes and hides itself if it can't get any.
-  **Not tested against the live service by the author.** One third-party source says RainViewer's free tier was restricted in 2026 (zoom limit, one color scheme, no forecast frames), which I couldn't confirm; the dashboard uses a low zoom (6) and works without forecast frames.
+- **Rain radar widget:** a looping map of rain near you, on a page of its own so the map is tall (it rotates in with the other pages like any widget) (last two hours, plus forecast frames when the service has them), with a pin on your place. Radar images are from **RainViewer**, whose free service is for personal and educational use and asks for a credit, which is always shown on the map. The base map is a Mapbox picture using your Mapbox token (without one, the radar is drawn on a plain backdrop). OK opens a big view: OK plays or pauses, Left and Right step through the frames. It checks for new radar every 10 minutes and hides itself if it can't get any.
+  **Not tested against the live service by the author.** One third-party source says RainViewer's free tier was restricted in 2026 (zoom limit, one color scheme, no forecast frames), which I couldn't confirm; the dashboard uses zoom 7 (twice as close as the earlier zoom 6) and works without forecast frames. In one test with a real location, RainViewer served every zoom-7 tile.
 - **Commute map:** with a Mapbox token the Commute widget also shows a small map of your route (orange line, pins A and B), and a larger one in its full-screen view. If the picture can't load, the widget stays text-only. Not tested against Mapbox by the author.
 - **Depth:** the background drifts a few pixels the opposite way to whatever you select, so the panels feel like they float in front of it (and Apps tiles lean toward the way you moved). It follows the Animations setting (Full only) and Moving Background.
 - **Selection glow:** one soft glow slides from the panel you leave to the panel you select.
@@ -297,8 +297,10 @@ From then on it's in the TV's Apps list as **Dashboard**. After you change `conf
 
 ### 5. If the calendar doesn't load on the TV
 
-If weather works but the calendar says **"Couldn't load … (Failed to fetch)"**, the TV is blocking
-the request to iCloud (a "CORS" error). Set up the small free proxy in `proxy/README.md`.
+If weather works but the calendar says **"Couldn't load … (Failed to fetch)"**, the browser is blocking
+the request to iCloud (a "CORS" error).
+- **Opened through `tools/serve.py` or `Start TV Preview.command`:** nothing to do, the calendar goes through that server. If you started the page with plain `python3 -m http.server`, use `python3 tools/serve.py` instead.
+- **Installed on the TV (Setup 4B):** the TV app usually doesn't need a proxy. If it still fails, set up the small free proxy in `proxy/README.md`.
 
 ---
 
@@ -377,11 +379,12 @@ test/                 automated checks (not needed on the TV)
 ```bash
 TZ=America/Denver node test/ics.test.js      # calendar reader: 25 checks
 node test/smart.test.js                      # countdowns, rain heads-up, sun countdown, greeting, "left today", sun arc, UV and air levels, day strip: 95 checks
-node test/pack.test.js                       # tile packing, incl. the double-width tiles: 32 checks
+node test/pack.test.js                       # tile packing, incl. the double-width tiles and the radar's own page: 39 checks
 node test/palette.test.js                    # album-art colors and the brightness cap: 12 checks
 node test/appmatch.test.js                   # the 28 services, finding them on the TV, the editor's list logic, tile readability: 59 checks
 node test/radarmath.test.js                  # radar map-tile maths, frame picking, Mapbox map URLs: 42 checks
 node test/apps-contrast.test.js              # readability of the text on the Apps page and the Edit button: 6 checks
+python3 test/serve.test.py                   # the local server and its iCloud-only calendar helper: 13 checks
 python3 -m http.server 8765 &                # then, with playwright, jsqr and pngjs installed:
 node test/art.test.js                        # every built-in artwork is readable in Dark mode (same worst-case model as the themes): 8 checks
 node test/ui.test.js                         # screen, remote, options, settings, pictures, Apps page, event cards, weather icons, radar, commute map, depth, selection glow, the app editor: 202 checks
